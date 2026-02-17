@@ -3,11 +3,11 @@ import {
   View, 
   Text, 
   StyleSheet, 
-  SafeAreaView, 
   StatusBar,
   Animated,
   Dimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome } from '@expo/vector-icons';
@@ -58,6 +58,7 @@ export default function WelcomeScreen() {
         }),
       ])
     ).start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleLogin = () => {
