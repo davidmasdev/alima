@@ -83,8 +83,12 @@ export default function LoginScreen() {
     // Simular llamada a API
     setTimeout(() => {
       setIsLoading(false);
-      console.log('Login exitoso:', { email, password });
+      router.replace('/(tabs)/today');
     }, 1500);
+  };
+
+  const handleRegister = async () => {
+      router.replace('/register');
   };
 
   const handleSocialLogin = (provider: 'apple' | 'google' | 'facebook') => {
@@ -131,7 +135,6 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </Animated.View>
 
-          {/* Title Section */}
           <Animated.View 
             style={[
               styles.titleSection,
@@ -144,7 +147,6 @@ export default function LoginScreen() {
             </Text>
           </Animated.View>
 
-          {/* Form */}
           <Animated.View 
             style={[
               styles.formContainer,
@@ -187,7 +189,6 @@ export default function LoginScreen() {
               icon="lock"
             />
 
-            {/* Forgot Password */}
             <TouchableOpacity 
               onPress={handleForgotPassword}
               style={styles.forgotPasswordContainer}
@@ -197,7 +198,6 @@ export default function LoginScreen() {
               </Text>
             </TouchableOpacity>
 
-            {/* Login Button */}
             <Button
               title="Iniciar sesión"
               onPress={handleLogin}
@@ -207,7 +207,6 @@ export default function LoginScreen() {
             />
           </Animated.View>
 
-          {/* Divider */}
           <Animated.View 
             style={[
               styles.dividerContainer,
@@ -219,7 +218,6 @@ export default function LoginScreen() {
             <View style={styles.dividerLine} />
           </Animated.View>
 
-          {/* Social Login */}
           <Animated.View 
             style={[
               styles.socialContainer,
@@ -248,7 +246,7 @@ export default function LoginScreen() {
             ]}
           >
             <Text style={styles.registerText}>¿No tienes cuenta? </Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={handleRegister}>
               <Text style={styles.registerLink}>Regístrate</Text>
             </TouchableOpacity>
           </Animated.View>

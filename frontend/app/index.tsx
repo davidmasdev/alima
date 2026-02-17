@@ -66,7 +66,7 @@ export default function WelcomeScreen() {
   };
 
   const handleRegister = () => {
-    router.push('/login');
+    router.push('/register');
   };
 
   return (
