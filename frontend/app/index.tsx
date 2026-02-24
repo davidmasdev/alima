@@ -13,6 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';
 import { Colors } from '@/constants/Colors';
+import LogoSVG from '@/components/ui/LogoSVG';
 
 const { height } = Dimensions.get('window');
 
@@ -94,18 +95,19 @@ export default function WelcomeScreen() {
           ]}
         >
           <Animated.View style={[styles.logoContainer, { transform: [{ scale: pulseAnim }] }]}>
-            <LinearGradient
+            {/* <LinearGradient
               colors={[Colors.primary, Colors.primaryDark]}
               style={styles.logoGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
               <FontAwesome name="leaf" size={50} color={Colors.textWhite} />
-            </LinearGradient>
+            </LinearGradient> */}
+            <LogoSVG></LogoSVG>
             <View style={styles.logoRing} />
           </Animated.View>
 
-          <Text style={styles.appName}>App de nutrición</Text>
+          <Text style={styles.appName}>Alima</Text>
           <Text style={styles.tagline}>Tu compañero de nutrición personal</Text>
         </Animated.View>
 
