@@ -35,17 +35,15 @@ export default function TodayScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
-      
       <LinearGradient
         colors={[Colors.primaryMuted, 'transparent']}
         style={styles.headerGradient}
       />
-      
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View 
+        <Animated.View
           style={[
             styles.header,
             { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
@@ -55,14 +53,13 @@ export default function TodayScreen() {
           <Text style={styles.date}>Hoy es un gran día para cuidar tu salud</Text>
         </Animated.View>
 
-        <Animated.View 
+        <Animated.View
           style={[
             styles.summaryCard,
             { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
           ]}
         >
           <Text style={styles.cardTitle}>Resumen de hoy</Text>
-          
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
               <View style={[styles.statIcon, { backgroundColor: Colors.primaryMuted }]}>
@@ -71,7 +68,6 @@ export default function TodayScreen() {
               <Text style={styles.statValue}>0</Text>
               <Text style={styles.statLabel}>kcal</Text>
             </View>
-            
             <View style={styles.statItem}>
               <View style={[styles.statIcon, { backgroundColor: Colors.successLight }]}>
                 <FontAwesome name="cutlery" size={20} color={Colors.success} />
@@ -79,7 +75,6 @@ export default function TodayScreen() {
               <Text style={styles.statValue}>0</Text>
               <Text style={styles.statLabel}>comidas</Text>
             </View>
-            
             <View style={styles.statItem}>
               <View style={[styles.statIcon, { backgroundColor: 'rgba(251, 113, 133, 0.1)' }]}>
                 <FontAwesome name="tint" size={20} color={Colors.secondary} />
@@ -90,7 +85,7 @@ export default function TodayScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View 
+        <Animated.View
           style={[
             styles.section,
             { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },

@@ -8,7 +8,8 @@ import {
   Platform,
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerEvent }
+from '@react-native-community/datetimepicker';
 import { Colors } from '@/constants/Colors';
 
 interface DatePickerProps {
@@ -51,7 +52,6 @@ export function DatePicker({
     return (
       <View style={styles.container}>
         {label && <Text style={styles.label}>{label}</Text>}
-        
         <View style={styles.webContainer}>
           <input
             type="date"
@@ -82,7 +82,8 @@ export function DatePicker({
 
         {error && (
           <View style={styles.errorContainer}>
-            <FontAwesome name="exclamation-circle" size={12} color={Colors.error} />
+            <FontAwesome name="exclamation-circle" size={12}
+            color={Colors.error} />
             <Text style={styles.errorText}>{error}</Text>
           </View>
         )}
@@ -123,7 +124,6 @@ export function DatePicker({
     return (
       <View style={styles.container}>
         {label && <Text style={styles.label}>{label}</Text>}
-        
         <TouchableOpacity
           style={[
             styles.selectButton,
@@ -174,7 +174,6 @@ export function DatePicker({
   return (
     <View style={styles.container}>
       {label && <Text style={styles.label}>{label}</Text>}
-      
       <TouchableOpacity
         style={[
           styles.selectButton,
@@ -202,7 +201,8 @@ export function DatePicker({
 
       {error && (
         <View style={styles.errorContainer}>
-          <FontAwesome name="exclamation-circle" size={12} color={Colors.error} />
+          <FontAwesome name="exclamation-circle" size={12}
+		color={Colors.error} />
           <Text style={styles.errorText}>{error}</Text>
         </View>
       )}
@@ -217,7 +217,8 @@ export function DatePicker({
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{placeholder}</Text>
-              <TouchableOpacity onPress={handleCancel} style={styles.closeButton}>
+              <TouchableOpacity onPress={handleCancel}
+	style={styles.closeButton}>
                 <FontAwesome name="times" size={20} color={Colors.text} />
               </TouchableOpacity>
             </View>
