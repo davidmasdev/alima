@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,11 +7,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
@@ -36,25 +34,6 @@ export default function OnboardingStep1Screen() {
   const [gender, setGender] = useState('');
   const [birthDate, setBirthDate] = useState<Date | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
-  
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-    ]).start();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -88,10 +67,7 @@ export default function OnboardingStep1Screen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
       
-      <LinearGradient
-        colors={[Colors.primaryMuted, 'transparent']}
-        style={styles.headerGradient}
-      />
+      <View style={styles.headerGradient} />
       
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -102,17 +78,12 @@ export default function OnboardingStep1Screen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Animated.View 
-            style={[
-              styles.titleSection,
-              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-            ]}
-          >
+          <View style={styles.titleSection}>
             <Text style={styles.title}>Tu información</Text>
             <Text style={styles.subtitle}>
               Paso 1 de 2
             </Text>
-          </Animated.View>
+          </View>
 
           <View style={styles.progressContainer}>
             <View style={styles.progressBar}>
@@ -120,12 +91,7 @@ export default function OnboardingStep1Screen() {
             </View>
           </View>
 
-          <Animated.View 
-            style={[
-              styles.formContainer,
-              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-            ]}
-          >
+          <View style={styles.formContainer}>
             <Input
               label="Nombre"
               placeholder="Tu nombre"
@@ -169,21 +135,16 @@ export default function OnboardingStep1Screen() {
               maximumDate={maxDate}
               minimumDate={minDate}
             />
-          </Animated.View>
+          </View>
 
-          <Animated.View 
-            style={[
-              styles.buttonContainer,
-              { opacity: fadeAnim },
-            ]}
-          >
+          <View style={styles.buttonContainer}>
             <Button
               title="Siguiente"
               onPress={handleNext}
               size="large"
               style={styles.nextButton}
             />
-          </Animated.View>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -201,6 +162,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 200,
+    backgroundColor: Colors.primaryMuted,
   },
   keyboardView: {
     flex: 1,

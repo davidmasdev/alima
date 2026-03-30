@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,9 @@ import {
   Platform,
   ScrollView,
   TouchableOpacity,
-  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome } from '@expo/vector-icons';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -31,25 +29,6 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
-  
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-    ]).start();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -108,10 +87,7 @@ export default function RegisterScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
       
-      <LinearGradient
-        colors={[Colors.primaryMuted, 'transparent']}
-        style={styles.headerGradient}
-      />
+      <View style={styles.headerGradient} />
       
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -122,37 +98,22 @@ export default function RegisterScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Animated.View 
-            style={[
-              styles.header,
-              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-            ]}
-          >
+          <View style={styles.header}>
             <TouchableOpacity onPress={handleBack} style={styles.backButton}>
               <View style={styles.backButtonCircle}>
                 <FontAwesome name="arrow-left" size={18} color={Colors.text} />
               </View>
             </TouchableOpacity>
-          </Animated.View>
+          </View>
 
-          <Animated.View 
-            style={[
-              styles.titleSection,
-              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-            ]}
-          >
+          <View style={styles.titleSection}>
             <Text style={styles.greeting}>Crear cuenta</Text>
             <Text style={styles.subtitle}>
               Regístrate para comenzar tu viaje
             </Text>
-          </Animated.View>
+          </View>
 
-          <Animated.View 
-            style={[
-              styles.formContainer,
-              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-            ]}
-          >
+          <View style={styles.formContainer}>
             <Input
               label="Correo electrónico"
               placeholder="tu@email.com"
@@ -211,25 +172,15 @@ export default function RegisterScreen() {
               size="large"
               style={styles.registerButton}
             />
-          </Animated.View>
+          </View>
 
-          <Animated.View 
-            style={[
-              styles.dividerContainer,
-              { opacity: fadeAnim },
-            ]}
-          >
+          <View style={styles.dividerContainer}>
             <View style={styles.dividerLine} />
             <Text style={styles.dividerText}>O regístrate con</Text>
             <View style={styles.dividerLine} />
-          </Animated.View>
+          </View>
 
-          <Animated.View 
-            style={[
-              styles.socialContainer,
-              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-            ]}
-          >
+          <View style={styles.socialContainer}>
             <SocialButton
               provider="apple"
               onPress={() => handleSocialLogin('apple')}
@@ -242,19 +193,14 @@ export default function RegisterScreen() {
               provider="facebook"
               onPress={() => handleSocialLogin('facebook')}
             />
-          </Animated.View>
+          </View>
 
-          <Animated.View 
-            style={[
-              styles.loginContainer,
-              { opacity: fadeAnim },
-            ]}
-          >
+          <View style={styles.loginContainer}>
             <Text style={styles.loginText}>¿Ya tienes una cuenta? </Text>
             <TouchableOpacity onPress={handleLogin}>
               <Text style={styles.loginLink}>Iniciar sesión</Text>
             </TouchableOpacity>
-          </Animated.View>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -272,6 +218,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 200,
+    backgroundColor: Colors.primaryMuted,
   },
   keyboardView: {
     flex: 1,

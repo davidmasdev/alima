@@ -1,15 +1,13 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { 
   View, 
   Text, 
   StyleSheet, 
   StatusBar,
-  Animated,
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';
 import { Colors } from '@/constants/Colors';
@@ -18,49 +16,6 @@ import LogoSVG from '@/components/ui/LogoSVG';
 const { height } = Dimensions.get('window');
 
 export default function WelcomeScreen() {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(50)).current;
-  const scaleAnim = useRef(new Animated.Value(0.8)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    // Animación de entrada
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        friction: 8,
-        tension: 40,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    // Animación de pulso continua
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.05,
-          duration: 1500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 1500,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const handleLogin = () => {
     router.push('/login');
@@ -75,51 +30,24 @@ export default function WelcomeScreen() {
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
       
       <View style={styles.backgroundDecorations}>
-        <LinearGradient
-          colors={['rgba(45, 212, 191, 0.15)', 'rgba(129, 140, 248, 0.1)', 'transparent']}
-          style={styles.gradientBg}
-        />
+        <View style={styles.solidBg} />
         <View style={[styles.circle, styles.circle1]} />
         <View style={[styles.circle, styles.circle2]} />
         <View style={[styles.circle, styles.circle3]} />
       </View>
 
       <View style={styles.content}>
-        <Animated.View 
-          style={[
-            styles.logoSection,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
-            },
-          ]}
-        >
-          <Animated.View style={[styles.logoContainer, { transform: [{ scale: pulseAnim }] }]}>
-            {/* <LinearGradient
-              colors={[Colors.primary, Colors.primaryDark]}
-              style={styles.logoGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <FontAwesome name="leaf" size={50} color={Colors.textWhite} />
-            </LinearGradient> */}
-            <LogoSVG></LogoSVG>
+        <View style={styles.logoSection}>
+          <View style={styles.logoContainer}>
+            <LogoSVG />
             <View style={styles.logoRing} />
-          </Animated.View>
+          </View>
 
           <Text style={styles.appName}>Alima</Text>
           <Text style={styles.tagline}>Tu compañero de nutrición personal</Text>
-        </Animated.View>
+        </View>
 
-        <Animated.View 
-          style={[
-            styles.featuresContainer,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}
-        >
+        <View style={styles.featuresContainer}>
           <View style={styles.featureItem}>
             <View style={[styles.featureIcon, { backgroundColor: Colors.successLight }]}>
               <FontAwesome name="heart" size={16} color={Colors.success} />
@@ -138,18 +66,10 @@ export default function WelcomeScreen() {
             </View>
             <Text style={styles.featureText}>IA</Text>
           </View>
-        </Animated.View>
+        </View>
 
         {/* Buttons Section */}
-        <Animated.View 
-          style={[
-            styles.buttonContainer,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: Animated.add(slideAnim, new Animated.Value(20)) }],
-            },
-          ]}
-        >
+        <View style={styles.buttonContainer}>
           <Button
             title="Comenzar ahora"
             onPress={handleLogin}
@@ -163,22 +83,17 @@ export default function WelcomeScreen() {
               Crear cuenta
             </Text>
           </View>
-        </Animated.View>
+        </View>
 
         {/* Footer */}
-        <Animated.View 
-          style={[
-            styles.footer,
-            { opacity: fadeAnim },
-          ]}
-        >
+        <View style={styles.footer}>
           <Text style={styles.footerText}>Al continuar, aceptas nuestros</Text>
           <View style={styles.termsContainer}>
             <Text style={styles.termsLink}>Términos de servicio</Text>
             <Text style={styles.footerText}> y </Text>
             <Text style={styles.termsLink}>Privacidad</Text>
           </View>
-        </Animated.View>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -193,12 +108,13 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     overflow: 'hidden',
   },
-  gradientBg: {
+  solidBg: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     height: height * 0.6,
+    backgroundColor: Colors.primaryMuted,
   },
   circle: {
     position: 'absolute',

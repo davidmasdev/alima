@@ -7,6 +7,16 @@
 - Usar texto plano o iconos de FontAwesome en su lugar
 - Mantener la interfaz profesional y limpia
 
+### 2. NUNCA usar gradientes
+- Usar SIEMPRE colores sólidos
+- NO usar LinearGradient en ningún componente
+- Todos los fondos, botones y elementos deben usar colores sólidos de la paleta
+
+### 3. NUNCA usar animaciones de transición de página
+- NO usar animaciones de entrada (fade, slide, scale) al cargar pantallas
+- NO usar Animated.Value, Animated.timing, Animated.spring para transiciones
+- Las animaciones de feedback (press/touch) en inputs sí están permitidas
+
 ## Paleta de Colores
 
 ### Colores Primarios
@@ -73,7 +83,7 @@
 
 ### Botón (Button)
 **Variantes:**
-1. **Primary**: Gradiente de primary a primaryDark, texto blanco, sombra colored
+1. **Primary**: Fondo primary (#2DD4BF), texto blanco, sombra colored
 2. **Secondary**: Fondo secondary, texto blanco
 3. **Outline**: Fondo transparente, borde gris, texto gris oscuro
 4. **Ghost**: Fondo transparente, texto primary
@@ -124,12 +134,8 @@
 
 ### Fondos
 - **Pantallas**: background (#FAFAFA) - no usar blanco puro
-- **Elementos decorativos**: Usar gradientes sutiles y círculos flotantes con colores muy transparentes
-- **Header**: Puede usar gradiente sutil de primaryMuted a transparente
-
-### Gradientes
-- **Primario**: `[#2DD4BF, #0D9488]` (izquierda a derecha o arriba a abajo)
-- **Decorativo**: `[rgba(45, 212, 191, 0.15), rgba(129, 140, 248, 0.1), transparent]`
+- **Elementos decorativos**: Usar círculos flotantes con colores muy transparentes (primaryMuted)
+- **Header**: Usar color sólido primaryMuted
 
 ### Sombras
 **Estándar:**
@@ -162,15 +168,13 @@ elevation: 5,
 ## Animaciones
 
 ### Principios
-- Usar `useNativeDriver: true` siempre que sea posible
-- Duración estándar: 300-600ms para transiciones
-- Spring animations para movimientos naturales (friction: 8, tension: 40)
-- Evitar animaciones excesivas que distraigan
+- SOLO animaciones de feedback (press/touch) permitidas
+- NO usar animaciones de entrada (fade, slide, scale) al cargar pantallas
+- NO usar Animated.Value, Animated.timing, Animated.spring para transiciones
+- Animaciones de feedback en inputs (scale al enfocar) sí están permitidas
 
-### Patrones Comunes
-- **Entrada**: fade + translateY
-- **Focus**: scale (1.02) + border color
-- **Hover/Press**: opacity o scale sutil
+### Patrones Permitidos
+- **Focus**: scale (1.02) + border color (solo en Input, Select, NumberInput)
 - **Loading**: ActivityIndicator con color primary
 
 ## Iconografía

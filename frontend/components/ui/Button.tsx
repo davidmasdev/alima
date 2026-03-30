@@ -8,7 +8,6 @@ import {
   TextStyle,
   View 
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '@/constants/Colors';
 
 interface ButtonProps {
@@ -64,12 +63,9 @@ export function Button({
         style={[styles.buttonContainer, style]}
         activeOpacity={0.9}
       >
-        <LinearGradient
-          colors={[Colors.primary, Colors.primaryDark]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+        <View
           style={[
-            styles.gradientButton,
+            styles.primaryButton,
             getSizeStyle(),
             (disabled || loading) && styles.disabledButton,
           ]}
@@ -84,7 +80,7 @@ export function Button({
               </Text>
             </View>
           )}
-        </LinearGradient>
+        </View>
       </TouchableOpacity>
     );
   }
@@ -153,11 +149,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
   },
-  gradientButton: {
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   button: {
     borderRadius: 16,
     alignItems: 'center',
@@ -182,6 +173,9 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     backgroundColor: Colors.primary,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   secondaryButton: {
     backgroundColor: Colors.secondary,

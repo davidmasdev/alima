@@ -1,64 +1,30 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   StatusBar,
   ScrollView,
-  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 
 export default function TodayScreen() {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-    ]).start();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
-      <LinearGradient
-        colors={[Colors.primaryMuted, 'transparent']}
-        style={styles.headerGradient}
-      />
+      <View style={styles.headerGradient} />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View
-          style={[
-            styles.header,
-            { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-          ]}
-        >
+        <View style={styles.header}>
           <Text style={styles.greeting}>Buenos días</Text>
           <Text style={styles.date}>Hoy es un gran día para cuidar tu salud</Text>
-        </Animated.View>
+        </View>
 
-        <Animated.View
-          style={[
-            styles.summaryCard,
-            { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-          ]}
-        >
+        <View style={styles.summaryCard}>
           <Text style={styles.cardTitle}>Resumen de hoy</Text>
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
@@ -83,20 +49,15 @@ export default function TodayScreen() {
               <Text style={styles.statLabel}>ml agua</Text>
             </View>
           </View>
-        </Animated.View>
+        </View>
 
-        <Animated.View
-          style={[
-            styles.section,
-            { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-          ]}
-        >
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Próximas comidas</Text>
           <View style={styles.emptyState}>
             <FontAwesome name="plus-circle" size={48} color={Colors.border} />
             <Text style={styles.emptyStateText}>Añade tu primera comida</Text>
           </View>
-        </Animated.View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -113,6 +74,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 200,
+    backgroundColor: Colors.primaryMuted,
   },
   scrollContent: {
     flexGrow: 1,

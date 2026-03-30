@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,9 @@ import {
   Platform,
   ScrollView,
   TouchableOpacity,
-  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
@@ -67,25 +65,6 @@ export default function OnboardingStep2Screen() {
   const [height, setHeight] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
-  
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-    ]).start();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -133,10 +112,7 @@ export default function OnboardingStep2Screen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
       
-      <LinearGradient
-        colors={[Colors.primaryMuted, 'transparent']}
-        style={styles.headerGradient}
-      />
+      <View style={styles.headerGradient} />
       
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -147,30 +123,20 @@ export default function OnboardingStep2Screen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Animated.View 
-            style={[
-              styles.header,
-              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-            ]}
-          >
+          <View style={styles.header}>
             <TouchableOpacity onPress={handleBack} style={styles.backButton}>
               <View style={styles.backButtonCircle}>
                 <FontAwesome name="arrow-left" size={18} color={Colors.text} />
               </View>
             </TouchableOpacity>
-          </Animated.View>
+          </View>
 
-          <Animated.View 
-            style={[
-              styles.titleSection,
-              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-            ]}
-          >
+          <View style={styles.titleSection}>
             <Text style={styles.title}>Tu información</Text>
             <Text style={styles.subtitle}>
               Paso 2 de 2
             </Text>
-          </Animated.View>
+          </View>
 
           <View style={styles.progressContainer}>
             <View style={styles.progressBar}>
@@ -178,12 +144,7 @@ export default function OnboardingStep2Screen() {
             </View>
           </View>
 
-          <Animated.View 
-            style={[
-              styles.formContainer,
-              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-            ]}
-          >
+          <View style={styles.formContainer}>
             <Select
               label="Actividad semanal"
               placeholder="Selecciona tu actividad"
@@ -241,14 +202,9 @@ export default function OnboardingStep2Screen() {
               error={errors.height}
               keyboardType="numeric"
             />
-          </Animated.View>
+          </View>
 
-          <Animated.View 
-            style={[
-              styles.buttonContainer,
-              { opacity: fadeAnim },
-            ]}
-          >
+          <View style={styles.buttonContainer}>
             <Button
               title="Enviar"
               onPress={handleSubmit}
@@ -256,7 +212,7 @@ export default function OnboardingStep2Screen() {
               size="large"
               style={styles.submitButton}
             />
-          </Animated.View>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -274,6 +230,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 200,
+    backgroundColor: Colors.primaryMuted,
   },
   keyboardView: {
     flex: 1,

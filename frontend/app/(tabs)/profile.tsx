@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,12 +6,10 @@ import {
   StatusBar,
   ScrollView,
   TouchableOpacity,
-  Animated,
   Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';
 import { Colors } from '@/constants/Colors';
@@ -34,25 +32,6 @@ const mockProfileData: ProfileData = {
 
 export default function ProfileScreen() {
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
-  
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-    ]).start();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const handleEdit = () => {
     console.log('Editar perfil');
@@ -88,30 +67,17 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
       
-      <LinearGradient
-        colors={[Colors.primaryMuted, 'transparent']}
-        style={styles.headerGradient}
-      />
+      <View style={styles.headerGradient} />
       
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View 
-          style={[
-            styles.header,
-            { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-          ]}
-        >
+        <View style={styles.header}>
           <Text style={styles.title}>Perfil</Text>
-        </Animated.View>
+        </View>
 
-        <Animated.View 
-          style={[
-            styles.infoCard,
-            { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-          ]}
-        >
+        <View style={styles.infoCard}>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Nombre:</Text>
             <Text style={styles.infoValue}>{mockProfileData.name}</Text>
@@ -138,14 +104,9 @@ export default function ProfileScreen() {
               {getGoalLabel(mockProfileData.goal)}
             </Text>
           </View>
-        </Animated.View>
+        </View>
 
-        <Animated.View 
-          style={[
-            styles.buttonsContainer,
-            { opacity: fadeAnim },
-          ]}
-        >
+        <View style={styles.buttonsContainer}>
           <Button
             title="Editar"
             onPress={handleEdit}
@@ -167,7 +128,7 @@ export default function ProfileScreen() {
           >
             <Text style={styles.deleteButtonText}>Eliminar cuenta</Text>
           </TouchableOpacity>
-        </Animated.View>
+        </View>
       </ScrollView>
 
       <Modal
@@ -220,6 +181,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 200,
+    backgroundColor: Colors.primaryMuted,
   },
   scrollContent: {
     flexGrow: 1,
