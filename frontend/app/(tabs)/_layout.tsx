@@ -11,16 +11,15 @@ export default function TabsLayout() {
           backgroundColor: Colors.backgroundCard,
           borderTopWidth: 1,
           borderTopColor: Colors.border,
-          height: 80,
-          paddingBottom: 20,
-          paddingTop: 10,
+          height: 65,
+          paddingBottom: 8,
+          paddingTop: 5,
         },
         tabBarActiveTintColor: Colors.primary,
         tabBarInactiveTintColor: Colors.textLight,
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 10,
           fontWeight: '600',
-          marginTop: 4,
         },
       }}
     >
