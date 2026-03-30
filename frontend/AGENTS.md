@@ -135,7 +135,7 @@
 ### Fondos
 - **Pantallas**: background (#FAFAFA) - no usar blanco puro
 - **Elementos decorativos**: Usar círculos flotantes con colores muy transparentes (primaryMuted)
-- **Header**: Usar color sólido primaryMuted
+- **Header**: Usar color sólido blanco (backgroundCard)
 
 ### Sombras
 **Estándar:**

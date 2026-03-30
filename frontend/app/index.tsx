@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: height * 0.6,
-    backgroundColor: Colors.primaryMuted,
+    backgroundColor: Colors.backgroundCard,
   },
   circle: {
     position: 'absolute',
@@ -123,21 +123,21 @@ const styles = StyleSheet.create({
   circle1: {
     width: 300,
     height: 300,
-    backgroundColor: 'rgba(45, 212, 191, 0.08)',
+    backgroundColor: 'rgba(0, 0, 0, 0.03)',
     top: -100,
     right: -100,
   },
   circle2: {
     width: 200,
     height: 200,
-    backgroundColor: 'rgba(129, 140, 248, 0.06)',
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
     top: height * 0.3,
     left: -50,
   },
   circle3: {
     width: 150,
     height: 150,
-    backgroundColor: 'rgba(251, 113, 133, 0.06)',
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
     bottom: height * 0.25,
     right: 30,
   },

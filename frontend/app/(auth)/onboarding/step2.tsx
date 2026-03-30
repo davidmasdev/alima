@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 200,
-    backgroundColor: Colors.primaryMuted,
+    backgroundColor: Colors.backgroundCard,
   },
   keyboardView: {
     flex: 1,
