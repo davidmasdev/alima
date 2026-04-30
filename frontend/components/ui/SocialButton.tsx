@@ -18,17 +18,20 @@ const providerConfig = {
   apple: {
     icon: 'apple',
     color: Colors.apple,
-    bgColor: '#F3F4F6',
+    bgColor: Colors.socialAppleBackground,
+    label: 'Continuar con Apple',
   },
   google: {
     icon: 'google',
     color: Colors.google,
-    bgColor: '#FEF2F2',
+    bgColor: Colors.socialGoogleBackground,
+    label: 'Continuar con Google',
   },
   facebook: {
     icon: 'facebook',
     color: Colors.facebook,
-    bgColor: '#EFF6FF',
+    bgColor: Colors.socialFacebookBackground,
+    label: 'Continuar con Facebook',
   },
 };
 
@@ -40,6 +43,8 @@ export function SocialButton({ provider, onPress, style }: SocialButtonProps) {
       onPress={onPress}
       style={[styles.button, { backgroundColor: config.bgColor }, style]}
       activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityLabel={config.label}
     >
       <View style={styles.iconContainer}>
         <FontAwesome 

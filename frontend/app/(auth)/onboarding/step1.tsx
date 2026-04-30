@@ -67,7 +67,7 @@ export default function OnboardingStep1Screen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
       
-      <View style={styles.headerGradient} />
+      <View style={styles.headerBackground} />
       
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  headerGradient: {
+  headerBackground: {
     position: 'absolute',
     top: 0,
     left: 0,

@@ -71,12 +71,12 @@ export default function RegisterScreen() {
     }, 1500);
   };
 
-  const handleSocialLogin = (provider: 'apple' | 'google' | 'facebook') => {
-    console.log(`Registro con ${provider}`);
+  const handleSocialLogin = (_provider: 'apple' | 'google' | 'facebook') => {
+    setErrors({ email: 'El registro con redes sociales aún no está disponible' });
   };
 
   const handleLogin = () => {
-    router.push('/login');
+    router.replace('/login');
   };
 
   const handleBack = () => {
@@ -87,7 +87,7 @@ export default function RegisterScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
       
-      <View style={styles.headerGradient} />
+      <View style={styles.headerBackground} />
       
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -99,7 +99,12 @@ export default function RegisterScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.header}>
-            <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+            <TouchableOpacity
+              onPress={handleBack}
+              style={styles.backButton}
+              accessibilityRole="button"
+              accessibilityLabel="Volver"
+            >
               <View style={styles.backButtonCircle}>
                 <FontAwesome name="arrow-left" size={18} color={Colors.text} />
               </View>
@@ -197,7 +202,11 @@ export default function RegisterScreen() {
 
           <View style={styles.loginContainer}>
             <Text style={styles.loginText}>¿Ya tienes una cuenta? </Text>
-            <TouchableOpacity onPress={handleLogin}>
+            <TouchableOpacity
+              onPress={handleLogin}
+              accessibilityRole="button"
+              accessibilityLabel="Ir a inicio de sesión"
+            >
               <Text style={styles.loginLink}>Iniciar sesión</Text>
             </TouchableOpacity>
           </View>
@@ -212,7 +221,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  headerGradient: {
+  headerBackground: {
     position: 'absolute',
     top: 0,
     left: 0,

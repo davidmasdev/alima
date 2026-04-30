@@ -37,11 +37,6 @@ export const Colors = {
   google: '#EA4335',
   apple: '#000000',
   
-  // Gradient colors
-  gradientStart: '#2DD4BF',
-  gradientEnd: '#0D9488',
-  gradientAccent: '#818CF8',
-  
   // Shadows
   shadow: 'rgba(0, 0, 0, 0.05)',
   shadowDark: 'rgba(0, 0, 0, 0.1)',
@@ -50,6 +45,11 @@ export const Colors = {
   placeholder: '#9CA3AF',
   disabled: '#D1D5DB',
   overlay: 'rgba(0, 0, 0, 0.4)',
+  overlayDark: 'rgba(0, 0, 0, 0.5)',
+  secondaryMuted: 'rgba(251, 113, 133, 0.1)',
+  socialAppleBackground: '#F3F4F6',
+  socialGoogleBackground: '#FEF2F2',
+  socialFacebookBackground: '#EFF6FF',
 };
 
 export default Colors;

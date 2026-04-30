@@ -83,6 +83,8 @@ export function Select({
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
           activeOpacity={0.9}
+          accessibilityRole="button"
+          accessibilityLabel={label ?? placeholder}
         >
           <Text
             style={[
@@ -121,6 +123,8 @@ export function Select({
               <TouchableOpacity
                 onPress={handleClose}
                 style={styles.closeButton}
+                accessibilityRole="button"
+                accessibilityLabel="Cerrar selector"
               >
                 <FontAwesome name="times" size={20} color={Colors.text} />
               </TouchableOpacity>
@@ -136,6 +140,8 @@ export function Select({
                     value === option.value && styles.optionItemSelected,
                   ]}
                   onPress={() => handleSelect(option.value)}
+                  accessibilityRole="button"
+                  accessibilityLabel={option.label}
                 >
                   <View style={styles.optionContent}>
                     <Text
@@ -229,7 +235,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: Colors.overlayDark,
     justifyContent: 'flex-end',
   },
   modalContent: {

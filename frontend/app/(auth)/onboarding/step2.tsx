@@ -112,7 +112,7 @@ export default function OnboardingStep2Screen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
       
-      <View style={styles.headerGradient} />
+      <View style={styles.headerBackground} />
       
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -124,7 +124,12 @@ export default function OnboardingStep2Screen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.header}>
-            <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+            <TouchableOpacity
+              onPress={handleBack}
+              style={styles.backButton}
+              accessibilityRole="button"
+              accessibilityLabel="Volver"
+            >
               <View style={styles.backButtonCircle}>
                 <FontAwesome name="arrow-left" size={18} color={Colors.text} />
               </View>
@@ -224,7 +229,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  headerGradient: {
+  headerBackground: {
     position: 'absolute',
     top: 0,
     left: 0,

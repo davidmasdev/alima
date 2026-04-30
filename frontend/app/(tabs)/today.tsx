@@ -14,7 +14,7 @@ export default function TodayScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
-      <View style={styles.headerGradient} />
+      <View style={styles.headerBackground} />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -42,7 +42,7 @@ export default function TodayScreen() {
               <Text style={styles.statLabel}>comidas</Text>
             </View>
             <View style={styles.statItem}>
-              <View style={[styles.statIcon, { backgroundColor: 'rgba(251, 113, 133, 0.1)' }]}>
+              <View style={[styles.statIcon, { backgroundColor: Colors.secondaryMuted }]}>
                 <FontAwesome name="tint" size={20} color={Colors.secondary} />
               </View>
               <Text style={styles.statValue}>0</Text>
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  headerGradient: {
+  headerBackground: {
     position: 'absolute',
     top: 0,
     left: 0,

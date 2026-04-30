@@ -32,9 +32,10 @@ const mockProfileData: ProfileData = {
 
 export default function ProfileScreen() {
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const [isEditUnavailableVisible, setIsEditUnavailableVisible] = useState(false);
 
   const handleEdit = () => {
-    console.log('Editar perfil');
+    setIsEditUnavailableVisible(true);
   };
 
   const handleLogout = () => {
@@ -54,6 +55,10 @@ export default function ProfileScreen() {
     setIsDeleteModalVisible(false);
   };
 
+  const closeEditUnavailable = () => {
+    setIsEditUnavailableVisible(false);
+  };
+
   const getGoalLabel = (goal: string): string => {
     const goals: Record<string, string> = {
       'maintain': 'Mantener peso',
@@ -67,7 +72,7 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
       
-      <View style={styles.headerGradient} />
+      <View style={styles.headerBackground} />
       
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -125,6 +130,8 @@ export default function ProfileScreen() {
           <TouchableOpacity
             style={styles.deleteButton}
             onPress={handleDeleteAccount}
+            accessibilityRole="button"
+            accessibilityLabel="Eliminar cuenta"
           >
             <Text style={styles.deleteButtonText}>Eliminar cuenta</Text>
           </TouchableOpacity>
@@ -134,7 +141,7 @@ export default function ProfileScreen() {
       <Modal
         visible={isDeleteModalVisible}
         transparent
-        animationType="fade"
+        animationType="none"
         onRequestClose={cancelDelete}
       >
         <View style={styles.modalOverlay}>
@@ -152,6 +159,8 @@ export default function ProfileScreen() {
               <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={cancelDelete}
+                accessibilityRole="button"
+                accessibilityLabel="Cancelar eliminación de cuenta"
               >
                 <Text style={styles.cancelButtonText}>Cancelar</Text>
               </TouchableOpacity>
@@ -159,10 +168,37 @@ export default function ProfileScreen() {
               <TouchableOpacity
                 style={[styles.modalButton, styles.confirmButton]}
                 onPress={confirmDelete}
+                accessibilityRole="button"
+                accessibilityLabel="Confirmar eliminación de cuenta"
               >
                 <Text style={styles.confirmButtonText}>Eliminar</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={isEditUnavailableVisible}
+        transparent
+        animationType="none"
+        onRequestClose={closeEditUnavailable}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Edición no disponible</Text>
+            <Text style={styles.modalText}>
+              La edición del perfil aún no está implementada.
+            </Text>
+
+            <TouchableOpacity
+              style={[styles.modalButton, styles.confirmButton, styles.singleModalButton]}
+              onPress={closeEditUnavailable}
+              accessibilityRole="button"
+              accessibilityLabel="Cerrar aviso"
+            >
+              <Text style={styles.confirmButtonText}>Entendido</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -175,7 +211,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  headerGradient: {
+  headerBackground: {
     position: 'absolute',
     top: 0,
     left: 0,
@@ -251,7 +287,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: Colors.overlayDark,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -296,6 +332,9 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
+  },
+  singleModalButton: {
+    width: '100%',
   },
   cancelButton: {
     backgroundColor: Colors.backgroundSecondary,

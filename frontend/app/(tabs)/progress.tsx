@@ -15,7 +15,7 @@ export default function ProgressScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
       
-      <View style={styles.headerGradient} />
+      <View style={styles.headerBackground} />
       
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  headerGradient: {
+  headerBackground: {
     position: 'absolute',
     top: 0,
     left: 0,

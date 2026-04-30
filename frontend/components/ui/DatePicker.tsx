@@ -8,8 +8,7 @@ import {
   Platform,
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import DateTimePicker, { DateTimePickerEvent }
-from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Colors } from '@/constants/Colors';
 
 interface DatePickerProps {
@@ -66,10 +65,11 @@ export function DatePicker({
             style={{
               width: '100%',
               height: 56,
-              paddingHorizontal: 16,
+              padding: '0 16px',
               fontSize: 16,
               fontFamily: 'inherit',
               borderWidth: error ? 2 : 1.5,
+              borderStyle: 'solid',
               borderColor: error ? Colors.error : value ? Colors.primary : Colors.border,
               borderRadius: 16,
               backgroundColor: error ? Colors.errorLight : Colors.backgroundCard,
@@ -132,6 +132,8 @@ export function DatePicker({
           ]}
           onPress={handlePress}
           activeOpacity={0.9}
+          accessibilityRole="button"
+          accessibilityLabel={label ?? placeholder}
         >
           <Text
             style={[
@@ -182,6 +184,8 @@ export function DatePicker({
         ]}
         onPress={handlePress}
         activeOpacity={0.9}
+        accessibilityRole="button"
+        accessibilityLabel={label ?? placeholder}
       >
         <Text
           style={[
@@ -217,8 +221,12 @@ export function DatePicker({
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{placeholder}</Text>
-              <TouchableOpacity onPress={handleCancel}
-	style={styles.closeButton}>
+              <TouchableOpacity
+                onPress={handleCancel}
+                style={styles.closeButton}
+                accessibilityRole="button"
+                accessibilityLabel="Cerrar selector de fecha"
+              >
                 <FontAwesome name="times" size={20} color={Colors.text} />
               </TouchableOpacity>
             </View>
@@ -239,6 +247,8 @@ export function DatePicker({
             <TouchableOpacity
               style={styles.confirmButton}
               onPress={handleConfirm}
+              accessibilityRole="button"
+              accessibilityLabel="Confirmar fecha"
             >
               <Text style={styles.confirmButtonText}>Confirmar</Text>
             </TouchableOpacity>
@@ -312,7 +322,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: Colors.overlayDark,
     justifyContent: 'flex-end',
   },
   modalContent: {

@@ -70,12 +70,12 @@ export default function LoginScreen() {
       router.replace('/register');
   };
 
-  const handleSocialLogin = (provider: 'apple' | 'google' | 'facebook') => {
-    console.log(`Login con ${provider}`);
+  const handleSocialLogin = (_provider: 'apple' | 'google' | 'facebook') => {
+    setErrors({ email: 'El inicio con redes sociales aún no está disponible' });
   };
 
   const handleForgotPassword = () => {
-    console.log('Recuperar contraseña');
+    setErrors({ email: 'La recuperación de contraseña aún no está disponible' });
   };
 
   const handleBack = () => {
@@ -86,7 +86,7 @@ export default function LoginScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
       
-      <View style={styles.headerGradient} />
+      <View style={styles.headerBackground} />
       
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -99,7 +99,12 @@ export default function LoginScreen() {
         >
           {/* Header */}
           <View style={styles.header}>
-            <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+            <TouchableOpacity
+              onPress={handleBack}
+              style={styles.backButton}
+              accessibilityRole="button"
+              accessibilityLabel="Volver"
+            >
               <View style={styles.backButtonCircle}>
                 <FontAwesome name="arrow-left" size={18} color={Colors.text} />
               </View>
@@ -153,6 +158,8 @@ export default function LoginScreen() {
             <TouchableOpacity 
               onPress={handleForgotPassword}
               style={styles.forgotPasswordContainer}
+              accessibilityRole="button"
+              accessibilityLabel="Recuperar contraseña"
             >
               <Text style={styles.forgotPasswordText}>
                 ¿Olvidaste tu contraseña?
@@ -192,7 +199,11 @@ export default function LoginScreen() {
           {/* Register Link */}
           <View style={styles.registerContainer}>
             <Text style={styles.registerText}>¿No tienes cuenta? </Text>
-            <TouchableOpacity onPress={handleRegister}>
+            <TouchableOpacity
+              onPress={handleRegister}
+              accessibilityRole="button"
+              accessibilityLabel="Ir a registro"
+            >
               <Text style={styles.registerLink}>Regístrate</Text>
             </TouchableOpacity>
           </View>
@@ -207,7 +218,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  headerGradient: {
+  headerBackground: {
     position: 'absolute',
     top: 0,
     left: 0,
