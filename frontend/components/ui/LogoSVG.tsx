@@ -5,9 +5,10 @@ import Svg, {
   Path,
   Circle,
 } from "react-native-svg"
+import { Colors } from "@/constants/Colors"
 const LogoSVG = (props: SvgProps) => (
   <Svg width={100} height={100} viewBox="0 0 100 100" {...props}>
-    <Rect width={80} height={80} x={10} y={10} fill="#2DD4BF" rx={18} ry={18} />
+    <Rect width={80} height={80} x={10} y={10} fill={Colors.primary} rx={18} ry={18} />
     <Path stroke="#fff" strokeLinecap="round" strokeWidth={3} d="M50 75V45" />
     <Path fill="#fff" d="M50 58s-16-5-18-18c0 0 15-2 18 12" opacity={0.9} />
     <Path

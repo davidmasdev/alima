@@ -113,7 +113,7 @@ export function Select({
       <Modal
         visible={isVisible}
         transparent
-        animationType="fade"
+        animationType="none"
         onRequestClose={handleClose}
       >
         <View style={styles.modalOverlay}>

@@ -62,6 +62,9 @@ export function Button({
         disabled={disabled || loading}
         style={[styles.buttonContainer, style]}
         activeOpacity={0.9}
+        accessibilityRole="button"
+        accessibilityLabel={title}
+        accessibilityState={{ disabled: disabled || loading, busy: loading }}
       >
         <View
           style={[
@@ -123,6 +126,9 @@ export function Button({
         style,
       ]}
       activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityState={{ disabled: disabled || loading, busy: loading }}
     >
       {loading ? (
         <ActivityIndicator 

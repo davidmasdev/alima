@@ -106,6 +106,8 @@ export function Input({
               onPress={togglePasswordVisibility}
               style={styles.eyeButton}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={isPasswordVisible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
             >
               <FontAwesome
                 name={isPasswordVisible ? 'eye-slash' : 'eye'}
