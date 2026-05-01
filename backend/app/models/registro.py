@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import Float, ForeignKey
+from sqlalchemy import Float, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -21,6 +21,7 @@ class Registro(UUIDPrimaryKeyMixin, Base):
         nullable=False,
     )
     cantidad: Mapped[float] = mapped_column(Float, nullable=False)
+    unidad: Mapped[str] = mapped_column(String(10), nullable=False, default="g")
 
     comida: Mapped["Comida"] = relationship("Comida", back_populates="registros")
     alimento: Mapped["Alimento"] = relationship("Alimento", back_populates="registros")

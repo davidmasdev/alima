@@ -22,7 +22,9 @@ import { NumberInput } from '@/components/ui/NumberInput';
 import { Colors } from '@/constants/Colors';
 import { ApiError } from '@/services/api';
 import { authService } from '@/services/auth';
+import { dailyLogService } from '@/services/dailyLog';
 import { profileService } from '@/services/profile';
+import type { MealType } from '@/types/dailyLog';
 import type { Profile } from '@/types/profile';
 
 interface FormErrors {
@@ -83,8 +85,12 @@ export default function ProfileScreen() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [isMealTypesModalVisible, setIsMealTypesModalVisible] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingMealTypes, setIsSavingMealTypes] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [mealTypes, setMealTypes] = useState<MealType[]>([]);
+  const [mealTypeNames, setMealTypeNames] = useState(['', '', '']);
   const [name, setName] = useState('');
   const [gender, setGender] = useState('');
   const [birthDate, setBirthDate] = useState<Date | null>(null);
@@ -99,8 +105,12 @@ export default function ProfileScreen() {
     setLoadError(null);
 
     try {
-      const data = await profileService.getProfile();
+      const [data, loadedMealTypes] = await Promise.all([
+        profileService.getProfile(),
+        dailyLogService.getMealTypes(),
+      ]);
       setProfile(data);
+      setMealTypes(loadedMealTypes);
     } catch {
       setLoadError('No se pudo cargar el perfil');
     } finally {
@@ -122,6 +132,40 @@ export default function ProfileScreen() {
     setHeight(profile?.altura ? String(profile.altura) : '');
     setErrors({});
     setIsEditModalVisible(true);
+  };
+
+  const openMealTypesEdit = () => {
+    const names = mealTypes.map((mealType) => mealType.nombre);
+    setMealTypeNames([names[0] ?? '', names[1] ?? '', names[2] ?? '']);
+    setErrors({});
+    setIsMealTypesModalVisible(true);
+  };
+
+  const closeMealTypesEdit = () => {
+    setIsMealTypesModalVisible(false);
+  };
+
+  const handleSaveMealTypes = async () => {
+    const names = mealTypeNames.map((item) => item.trim()).filter(Boolean);
+    if (names.length === 0) {
+      setErrors({ form: 'Añade al menos un tipo de comida' });
+      return;
+    }
+
+    setIsSavingMealTypes(true);
+    try {
+      const updatedMealTypes = await dailyLogService.updateMealTypes(names);
+      setMealTypes(updatedMealTypes);
+      setIsMealTypesModalVisible(false);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setErrors({ form: error.detail });
+      } else {
+        setErrors({ form: 'No se pudieron guardar los tipos de comida' });
+      }
+    } finally {
+      setIsSavingMealTypes(false);
+    }
   };
 
   const closeEdit = () => {
@@ -303,6 +347,20 @@ export default function ProfileScreen() {
               </View>
             </View>
 
+            <View style={styles.infoCard}>
+              <Text style={styles.cardTitle}>Tipos de comida</Text>
+              <Text style={styles.mealTypesText}>
+                {mealTypes.map((mealType) => mealType.nombre).join(', ') || 'Pendiente'}
+              </Text>
+              <Button
+                title="Configurar comidas"
+                onPress={openMealTypesEdit}
+                variant="outline"
+                size="medium"
+                style={styles.configureMealsButton}
+              />
+            </View>
+
             <View style={styles.buttonsContainer}>
               <Button
                 title={isProfileComplete ? 'Editar' : 'Completar perfil'}
@@ -370,6 +428,64 @@ export default function ProfileScreen() {
                   <ActivityIndicator color={Colors.textWhite} />
                 ) : (
                   <Text style={styles.confirmButtonText}>Eliminar</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={isMealTypesModalVisible}
+        transparent
+        animationType="none"
+        onRequestClose={closeMealTypesEdit}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Tipos de comida</Text>
+            <Text style={styles.modalText}>
+              Configura las comidas que aparecerán en la vista diaria.
+            </Text>
+
+            {[0, 1, 2].map((index) => (
+              <Input
+                key={index}
+                label={`Comida ${index + 1}`}
+                placeholder={index === 0 ? 'Desayuno' : index === 1 ? 'Comida' : 'Cena'}
+                value={mealTypeNames[index]}
+                onChangeText={(text) => {
+                  const nextNames = [...mealTypeNames];
+                  nextNames[index] = text;
+                  setMealTypeNames(nextNames);
+                  if (errors.form) setErrors({ ...errors, form: undefined });
+                }}
+              />
+            ))}
+
+            {errors.form && <Text style={styles.errorText}>{errors.form}</Text>}
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={closeMealTypesEdit}
+                accessibilityRole="button"
+                accessibilityLabel="Cancelar configuración de comidas"
+              >
+                <Text style={styles.cancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalButton, styles.saveButton]}
+                onPress={handleSaveMealTypes}
+                accessibilityRole="button"
+                accessibilityLabel="Guardar tipos de comida"
+                disabled={isSavingMealTypes}
+              >
+                {isSavingMealTypes ? (
+                  <ActivityIndicator color={Colors.textWhite} />
+                ) : (
+                  <Text style={styles.confirmButtonText}>Guardar</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -580,6 +696,21 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: Colors.text,
+    marginBottom: 10,
+  },
+  mealTypesText: {
+    color: Colors.textSecondary,
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 16,
+  },
+  configureMealsButton: {
+    width: '100%',
   },
   infoRow: {
     flexDirection: 'row',

@@ -20,7 +20,13 @@ pip install -e ".[dev]"
 alembic upgrade head
 ```
 
-5. Start the API:
+5. Seed common foods for local testing:
+
+```bash
+python scripts/seed_foods.py
+```
+
+6. Start the API:
 
 ```bash
 fastapi dev app/main.py

@@ -41,3 +41,9 @@ class Usuario(UUIDPrimaryKeyMixin, Base):
         back_populates="usuario",
         cascade="all, delete-orphan",
     )
+    tipos_comida: Mapped[list["TipoComidaUsuario"]] = relationship(
+        "TipoComidaUsuario",
+        back_populates="usuario",
+        cascade="all, delete-orphan",
+        order_by="TipoComidaUsuario.orden",
+    )

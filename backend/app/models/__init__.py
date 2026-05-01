@@ -6,6 +6,7 @@ from app.models.plantilla import Plantilla
 from app.models.recomendacion import Recomendacion
 from app.models.registro import Registro
 from app.models.registro_plantilla import RegistroPlantilla
+from app.models.tipo_comida_usuario import TipoComidaUsuario
 from app.models.usuario import Usuario
 
 __all__ = [
@@ -17,6 +18,6 @@ __all__ = [
     "Recomendacion",
     "Registro",
     "RegistroPlantilla",
+    "TipoComidaUsuario",
     "Usuario",
 ]
-

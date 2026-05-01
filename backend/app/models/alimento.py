@@ -13,6 +13,7 @@ class Alimento(UUIDPrimaryKeyMixin, Base):
     proteinas: Mapped[float] = mapped_column(Float, nullable=False)
     carbohidratos: Mapped[float] = mapped_column(Float, nullable=False)
     grasas: Mapped[float] = mapped_column(Float, nullable=False)
+    unidad_base: Mapped[str] = mapped_column(String(10), nullable=False, default="g")
     codigo_qr: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
 
     registros: Mapped[list["Registro"]] = relationship("Registro", back_populates="alimento")
