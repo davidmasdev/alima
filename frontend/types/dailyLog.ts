@@ -58,3 +58,8 @@ export interface DailyEntryPayload {
   unidad: 'g' | 'ml';
 }
 
+export interface DailyTemplatePayload {
+  fecha: string;
+  tipo: string;
+  template_id: string;
+}

@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -19,8 +20,10 @@ import { Colors } from '@/constants/Colors';
 import { ApiError } from '@/services/api';
 import { dailyLogService } from '@/services/dailyLog';
 import { profileService } from '@/services/profile';
+import { templatesService } from '@/services/templates';
 import type { DailyLog, Food, MealLog } from '@/types/dailyLog';
 import type { Profile } from '@/types/profile';
+import type { MealTemplate } from '@/types/templates';
 
 const unitOptions = [
   { value: 'g', label: 'Gramos' },
@@ -53,11 +56,14 @@ function round(value: number): number {
 }
 
 export default function TodayScreen() {
+  const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [dailyLog, setDailyLog] = useState<DailyLog | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [templates, setTemplates] = useState<MealTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
+  const [isTemplateModalVisible, setIsTemplateModalVisible] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState('');
   const [query, setQuery] = useState('');
   const [foods, setFoods] = useState<Food[]>([]);
@@ -65,6 +71,7 @@ export default function TodayScreen() {
   const [quantity, setQuantity] = useState('');
   const [unit, setUnit] = useState<'g' | 'ml'>('g');
   const [isSearching, setIsSearching] = useState(false);
+  const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -128,6 +135,25 @@ export default function TodayScreen() {
     setIsAddModalVisible(false);
   };
 
+  const openTemplateModal = async () => {
+    setIsTemplateModalVisible(true);
+    setIsLoadingTemplates(true);
+    setError(null);
+    try {
+      const data = await templatesService.listTemplates('recent');
+      setTemplates(data);
+    } catch {
+      setError('No se pudieron cargar las plantillas');
+      setTemplates([]);
+    } finally {
+      setIsLoadingTemplates(false);
+    }
+  };
+
+  const closeTemplateModal = () => {
+    setIsTemplateModalVisible(false);
+  };
+
   const handleSelectFood = (food: Food) => {
     setSelectedFood(food);
     setQuery(food.nombre);
@@ -170,6 +196,35 @@ export default function TodayScreen() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleApplyTemplate = async (template: MealTemplate) => {
+    setIsSaving(true);
+    setError(null);
+    try {
+      const updatedLog = await dailyLogService.addFromTemplate({
+        fecha: dateKey,
+        tipo: selectedMealType,
+        template_id: template.id,
+      });
+      setDailyLog(updatedLog);
+      setIsTemplateModalVisible(false);
+      setIsAddModalVisible(false);
+    } catch (caughtError) {
+      if (caughtError instanceof ApiError) {
+        setError(caughtError.detail);
+      } else {
+        setError('No se pudo anadir la plantilla');
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const goToTemplates = () => {
+    setIsTemplateModalVisible(false);
+    setIsAddModalVisible(false);
+    router.push('/(tabs)/templates');
   };
 
   const mealTypeOptions = (dailyLog?.meal_types ?? ['Desayuno', 'Comida', 'Cena']).map((mealType) => ({
@@ -376,6 +431,14 @@ export default function TodayScreen() {
               {error && <Text style={styles.errorText}>{error}</Text>}
 
               <TouchableOpacity
+                style={styles.templateButton}
+                onPress={openTemplateModal}
+              >
+                <Text style={styles.templateButtonText}>Anadir desde plantilla</Text>
+                <FontAwesome name="file-text-o" size={22} color={Colors.textSecondary} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
                 style={styles.qrButton}
                 onPress={() => setError('Escaneo QR disponible en RF-011')}
               >
@@ -398,6 +461,81 @@ export default function TodayScreen() {
                 style={styles.modalActionButton}
               />
             </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={isTemplateModalVisible}
+        transparent
+        animationType="none"
+        onRequestClose={closeTemplateModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Elegir plantilla</Text>
+
+            {isLoadingTemplates ? (
+              <View style={styles.templateLoadingBox}>
+                <ActivityIndicator color={Colors.primary} />
+              </View>
+            ) : templates.length > 0 ? (
+              <ScrollView
+                contentContainerStyle={styles.templatePickerContent}
+                showsVerticalScrollIndicator={false}
+              >
+                {templates.map((template) => (
+                  <TouchableOpacity
+                    key={template.id}
+                    style={styles.templatePickerItem}
+                    onPress={() => handleApplyTemplate(template)}
+                    disabled={isSaving}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Usar plantilla ${template.nombre}`}
+                  >
+                    <View style={styles.templatePickerTextGroup}>
+                      <Text style={styles.templatePickerName}>{template.nombre}</Text>
+                      <Text style={styles.templatePickerMeta}>
+                        {template.items.length} alimentos - {round(template.calorias)} Kcal
+                      </Text>
+                    </View>
+                    <FontAwesome name="chevron-right" size={16} color={Colors.textLight} />
+                  </TouchableOpacity>
+                ))}
+
+                {error && <Text style={styles.errorText}>{error}</Text>}
+
+                <Button
+                  title="Cancelar"
+                  onPress={closeTemplateModal}
+                  variant="secondary"
+                  size="large"
+                  style={styles.modalActionButton}
+                />
+              </ScrollView>
+            ) : (
+              <View style={styles.emptyTemplatePicker}>
+                <FontAwesome name="folder-open" size={48} color={Colors.border} />
+                <Text style={styles.emptyTemplateTitle}>No hay plantillas</Text>
+                <Text style={styles.emptyTemplateText}>
+                  Crea una plantilla para anadir comidas completas desde aqui
+                </Text>
+                {error && <Text style={styles.errorText}>{error}</Text>}
+                <Button
+                  title="Crear plantilla"
+                  onPress={goToTemplates}
+                  size="large"
+                  style={styles.modalActionButton}
+                />
+                <Button
+                  title="Cancelar"
+                  onPress={closeTemplateModal}
+                  variant="secondary"
+                  size="large"
+                  style={styles.modalActionButton}
+                />
+              </View>
+            )}
           </View>
         </View>
       </Modal>
@@ -691,6 +829,67 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     fontSize: 16,
     fontWeight: '800',
+  },
+  templateButton: {
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  templateButtonText: {
+    color: Colors.textSecondary,
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  templateLoadingBox: {
+    paddingVertical: 48,
+  },
+  templatePickerContent: {
+    gap: 12,
+    paddingBottom: 4,
+  },
+  templatePickerItem: {
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    borderRadius: 14,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  templatePickerTextGroup: {
+    flex: 1,
+  },
+  templatePickerName: {
+    color: Colors.text,
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  templatePickerMeta: {
+    color: Colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  emptyTemplatePicker: {
+    alignItems: 'center',
+    gap: 14,
+  },
+  emptyTemplateTitle: {
+    color: Colors.text,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  emptyTemplateText: {
+    color: Colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
+    marginBottom: 6,
   },
   modalActionButton: {
     width: '100%',

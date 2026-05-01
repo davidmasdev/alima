@@ -1,6 +1,13 @@
 import { apiRequest } from '@/services/api';
 import { authService } from '@/services/auth';
-import type { DailyEntry, DailyEntryPayload, DailyLog, Food, MealType } from '@/types/dailyLog';
+import type {
+  DailyEntry,
+  DailyEntryPayload,
+  DailyLog,
+  DailyTemplatePayload,
+  Food,
+  MealType,
+} from '@/types/dailyLog';
 
 async function requestWithToken<T>(
   path: string,
@@ -47,7 +54,15 @@ export async function deleteEntry(entryId: string): Promise<void> {
   });
 }
 
+export async function addFromTemplate(payload: DailyTemplatePayload): Promise<DailyLog> {
+  return requestWithToken<DailyLog>('/daily-log/from-template', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
 export const dailyLogService = {
+  addFromTemplate,
   addEntry,
   deleteEntry,
   getDailyLog,
@@ -55,4 +70,3 @@ export const dailyLogService = {
   searchFoods,
   updateMealTypes,
 };
-

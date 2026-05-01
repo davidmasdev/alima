@@ -1,6 +1,7 @@
+from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import Float, ForeignKey, String
+from sqlalchemy import DateTime, Float, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -17,6 +18,7 @@ class Plantilla(UUIDPrimaryKeyMixin, Base):
     )
     nombre: Mapped[str] = mapped_column(String(160), nullable=False)
     calorias: Mapped[float] = mapped_column(Float, nullable=False, default=0)
+    ultimo_uso: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     usuario: Mapped["Usuario"] = relationship("Usuario", back_populates="plantillas")
     registros: Mapped[list["RegistroPlantilla"]] = relationship(

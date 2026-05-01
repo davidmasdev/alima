@@ -11,8 +11,10 @@ from app.schemas.daily_log import (
     DailyEntryCreateRequest,
     DailyEntryResponse,
     DailyLogResponse,
+    DailyTemplateApplyRequest,
 )
 from app.services.daily_log import add_daily_entry, delete_daily_entry, get_daily_log
+from app.services.templates import apply_template_to_daily_log
 
 
 router = APIRouter()
@@ -36,6 +38,21 @@ def create_daily_entry(
     return add_daily_entry(db, current_user, payload)
 
 
+@router.post("/from-template", response_model=DailyLogResponse, status_code=status.HTTP_201_CREATED)
+def create_daily_entries_from_template(
+    payload: DailyTemplateApplyRequest,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+) -> DailyLogResponse:
+    return apply_template_to_daily_log(
+        db,
+        current_user,
+        payload.template_id,
+        payload.fecha,
+        payload.tipo,
+    )
+
+
 @router.delete("/entries/{entry_id}", status_code=status.HTTP_204_NO_CONTENT)
 def remove_daily_entry(
     entry_id: UUID,
@@ -43,4 +60,3 @@ def remove_daily_entry(
     current_user: Usuario = Depends(get_current_user),
 ) -> None:
     delete_daily_entry(db, current_user, entry_id)
-

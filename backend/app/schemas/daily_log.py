@@ -33,6 +33,12 @@ class DailyEntryCreateRequest(BaseModel):
     unidad: str = Field(pattern="^(g|ml)$")
 
 
+class DailyTemplateApplyRequest(BaseModel):
+    fecha: date
+    tipo: str = Field(min_length=1, max_length=60)
+    template_id: UUID
+
+
 class DailyEntryResponse(BaseModel):
     id: UUID
     alimento_id: UUID
@@ -66,4 +72,3 @@ class DailyLogResponse(BaseModel):
     meal_types: list[str]
     totals: DailyTotalsResponse
     meals: list[MealLogResponse]
-
