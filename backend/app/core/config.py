@@ -15,6 +15,18 @@ class Settings(BaseSettings):
         default=60,
         alias="ACCESS_TOKEN_EXPIRE_MINUTES",
     )
+    backend_cors_origins: str = Field(
+        default="http://localhost:8081,http://localhost:19006",
+        alias="BACKEND_CORS_ORIGINS",
+    )
+
+    @property
+    def cors_origins(self) -> list[str]:
+        return [
+            origin.strip()
+            for origin in self.backend_cors_origins.split(",")
+            if origin.strip()
+        ]
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -22,4 +34,3 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
-

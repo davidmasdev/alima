@@ -16,6 +16,8 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { SocialButton } from '@/components/ui/SocialButton';
 import { Colors } from '@/constants/Colors';
+import { ApiError } from '@/services/api';
+import { authService } from '@/services/auth';
 
 
 
@@ -46,8 +48,8 @@ export default function LoginScreen() {
 
     if (!password) {
       newErrors.password = 'La contraseña es obligatoria';
-    } else if (password.length < 6) {
-      newErrors.password = 'La contraseña debe tener al menos 6 caracteres';
+    } else if (password.length < 8) {
+      newErrors.password = 'La contraseña debe tener al menos 8 caracteres';
     }
 
     setErrors(newErrors);
@@ -58,12 +60,26 @@ export default function LoginScreen() {
     if (!validateForm()) return;
 
     setIsLoading(true);
-    
-    // Simular llamada a API
-    setTimeout(() => {
-      setIsLoading(false);
+
+    try {
+      await authService.login({
+        email: email.trim(),
+        password,
+      });
       router.replace('/(tabs)/today');
-    }, 1500);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        if (error.status === 401) {
+          setErrors({ password: 'Credenciales incorrectas' });
+        } else {
+          setErrors({ email: error.detail });
+        }
+      } else {
+        setErrors({ email: 'No se pudo iniciar sesión' });
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleRegister = async () => {

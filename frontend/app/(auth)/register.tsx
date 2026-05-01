@@ -16,6 +16,8 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { SocialButton } from '@/components/ui/SocialButton';
 import { Colors } from '@/constants/Colors';
+import { ApiError } from '@/services/api';
+import { authService } from '@/services/auth';
 
 interface FormErrors {
   email?: string;
@@ -46,8 +48,8 @@ export default function RegisterScreen() {
 
     if (!password) {
       newErrors.password = 'La contraseña es obligatoria';
-    } else if (password.length < 6) {
-      newErrors.password = 'La contraseña debe tener al menos 6 caracteres';
+    } else if (password.length < 8) {
+      newErrors.password = 'La contraseña debe tener al menos 8 caracteres';
     }
 
     if (!confirmPassword) {
@@ -64,11 +66,26 @@ export default function RegisterScreen() {
     if (!validateForm()) return;
 
     setIsLoading(true);
-    
-    setTimeout(() => {
-      setIsLoading(false);
+
+    try {
+      await authService.register({
+        email: email.trim(),
+        password,
+      });
       router.push('/onboarding/step1');
-    }, 1500);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        if (error.status === 409) {
+          setErrors({ email: 'Ya existe una cuenta con este correo' });
+        } else {
+          setErrors({ email: error.detail });
+        }
+      } else {
+        setErrors({ email: 'No se pudo crear la cuenta' });
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSocialLogin = (_provider: 'apple' | 'google' | 'facebook') => {

@@ -27,3 +27,11 @@ fastapi dev app/main.py
 ```
 
 The API is exposed under `/api`.
+
+For local frontend integration, set `BACKEND_CORS_ORIGINS` to the Expo origin and set
+`EXPO_PUBLIC_API_URL` in the frontend to the backend API URL, for example:
+
+```bash
+BACKEND_CORS_ORIGINS=http://localhost:8081,http://localhost:19006
+EXPO_PUBLIC_API_URL=http://localhost:8000/api
+```
