@@ -21,7 +21,7 @@ import { ApiError } from '@/services/api';
 import { dailyLogService } from '@/services/dailyLog';
 import { profileService } from '@/services/profile';
 import { templatesService } from '@/services/templates';
-import type { DailyLog, Food, MealLog } from '@/types/dailyLog';
+import type { DailyEntry, DailyLog, Food, MealLog } from '@/types/dailyLog';
 import type { Profile } from '@/types/profile';
 import type { MealTemplate } from '@/types/templates';
 
@@ -73,6 +73,8 @@ export default function TodayScreen() {
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
+  const [entryToDelete, setEntryToDelete] = useState<DailyEntry | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const dateKey = useMemo(() => formatDate(selectedDate), [selectedDate]);
@@ -227,6 +229,83 @@ export default function TodayScreen() {
     router.push('/(tabs)/templates');
   };
 
+  const openDeleteEntryModal = (entry: DailyEntry) => {
+    setEntryToDelete(entry);
+  };
+
+  const closeDeleteEntryModal = () => {
+    if (!deletingEntryId) {
+      setEntryToDelete(null);
+    }
+  };
+
+  const handleDeleteEntry = async () => {
+    if (!entryToDelete) return;
+
+    const entryId = entryToDelete.id;
+    setDeletingEntryId(entryId);
+    setError(null);
+    try {
+      await dailyLogService.deleteEntry(entryId);
+      setDailyLog((currentLog) => {
+        if (!currentLog) return currentLog;
+
+        const nextMeals = currentLog.meals.map((meal) => {
+          const nextEntries = meal.entries.filter((entry) => entry.id !== entryId);
+          const nextTotals = nextEntries.reduce(
+            (totalsByMeal, entry) => ({
+              calorias: totalsByMeal.calorias + entry.calorias,
+              proteinas: totalsByMeal.proteinas + entry.proteinas,
+              carbohidratos: totalsByMeal.carbohidratos + entry.carbohidratos,
+              grasas: totalsByMeal.grasas + entry.grasas,
+            }),
+            { calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0 },
+          );
+
+          return {
+            ...meal,
+            entries: nextEntries,
+            calorias: round(nextTotals.calorias),
+            proteinas: round(nextTotals.proteinas),
+            carbohidratos: round(nextTotals.carbohidratos),
+            grasas: round(nextTotals.grasas),
+          };
+        });
+
+        const nextTotals = nextMeals.reduce(
+          (totalsByDay, meal) => ({
+            calorias: totalsByDay.calorias + meal.calorias,
+            proteinas: totalsByDay.proteinas + meal.proteinas,
+            carbohidratos: totalsByDay.carbohidratos + meal.carbohidratos,
+            grasas: totalsByDay.grasas + meal.grasas,
+          }),
+          { calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0 },
+        );
+
+        return {
+          ...currentLog,
+          meals: nextMeals,
+          totals: {
+            calorias: round(nextTotals.calorias),
+            proteinas: round(nextTotals.proteinas),
+            carbohidratos: round(nextTotals.carbohidratos),
+            grasas: round(nextTotals.grasas),
+          },
+        };
+      });
+      setEntryToDelete(null);
+      await loadDailyData();
+    } catch (caughtError) {
+      if (caughtError instanceof ApiError) {
+        setError(caughtError.detail);
+      } else {
+        setError('No se pudo eliminar el alimento');
+      }
+    } finally {
+      setDeletingEntryId(null);
+    }
+  };
+
   const mealTypeOptions = (dailyLog?.meal_types ?? ['Desayuno', 'Comida', 'Cena']).map((mealType) => ({
     value: mealType,
     label: mealType,
@@ -260,12 +339,26 @@ export default function TodayScreen() {
             <Text style={[styles.tableCell, styles.foodCell]}>Alimento</Text>
             <Text style={styles.tableCell}>Cantidad</Text>
             <Text style={styles.tableCell}>Kcal</Text>
+            <Text style={styles.actionHeaderCell}> </Text>
           </View>
           {meal.entries.map((entry) => (
             <View key={entry.id} style={styles.tableRow}>
               <Text style={[styles.tableCell, styles.foodCell]}>{entry.alimento_nombre}</Text>
               <Text style={styles.tableCell}>{entry.cantidad} {entry.unidad}</Text>
               <Text style={styles.tableCell}>{round(entry.calorias)}</Text>
+              <TouchableOpacity
+                style={styles.deleteEntryButton}
+                onPress={() => openDeleteEntryModal(entry)}
+                disabled={deletingEntryId === entry.id}
+                accessibilityRole="button"
+                accessibilityLabel={`Eliminar ${entry.alimento_nombre}`}
+              >
+                {deletingEntryId === entry.id ? (
+                  <ActivityIndicator size="small" color={Colors.error} />
+                ) : (
+                  <FontAwesome name="trash" size={14} color={Colors.error} />
+                )}
+              </TouchableOpacity>
             </View>
           ))}
         </View>
@@ -539,6 +632,37 @@ export default function TodayScreen() {
           </View>
         </View>
       </Modal>
+
+      <Modal
+        visible={entryToDelete !== null}
+        transparent
+        animationType="none"
+        onRequestClose={closeDeleteEntryModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.confirmModalContent}>
+            <Text style={styles.confirmTitle}>Eliminar alimento</Text>
+            <Text style={styles.confirmText}>
+              {`Seguro que quieres eliminar "${entryToDelete?.alimento_nombre}" del diario?`}
+            </Text>
+            {error && <Text style={styles.errorText}>{error}</Text>}
+            <Button
+              title="Eliminar"
+              onPress={handleDeleteEntry}
+              loading={deletingEntryId !== null}
+              size="large"
+              style={styles.modalActionButton}
+            />
+            <Button
+              title="Cancelar"
+              onPress={closeDeleteEntryModal}
+              variant="secondary"
+              size="large"
+              style={styles.modalActionButton}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -715,6 +839,7 @@ const styles = StyleSheet.create({
   tableRow: {
     flexDirection: 'row',
     paddingVertical: 4,
+    alignItems: 'center',
   },
   tableCell: {
     flex: 1,
@@ -726,6 +851,18 @@ const styles = StyleSheet.create({
   foodCell: {
     flex: 1.4,
     textAlign: 'left',
+  },
+  actionHeaderCell: {
+    width: 34,
+  },
+  deleteEntryButton: {
+    width: 34,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: Colors.errorLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 6,
   },
   emptyMealText: {
     color: Colors.textLight,
@@ -752,6 +889,27 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 420,
     maxHeight: '90%',
+  },
+  confirmModalContent: {
+    backgroundColor: Colors.backgroundCard,
+    borderRadius: 24,
+    padding: 24,
+    width: '100%',
+    maxWidth: 380,
+    gap: 14,
+  },
+  confirmTitle: {
+    color: Colors.text,
+    fontSize: 22,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  confirmText: {
+    color: Colors.textSecondary,
+    fontSize: 15,
+    fontWeight: '500',
+    textAlign: 'center',
+    lineHeight: 22,
   },
   modalTitle: {
     fontSize: 28,
