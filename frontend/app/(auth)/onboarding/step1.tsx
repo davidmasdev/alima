@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { Colors } from '@/constants/Colors';
+import { profileService } from '@/services/profile';
 
 interface FormErrors {
   name?: string;
@@ -54,8 +55,22 @@ export default function OnboardingStep1Screen() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleNext = () => {
+  const formatDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const handleNext = async () => {
     if (!validateForm()) return;
+    if (!birthDate) return;
+
+    await profileService.saveOnboardingDraft({
+      nombre: name.trim(),
+      sexo: gender,
+      fecha_nacimiento: formatDate(birthDate),
+    });
     router.push('/onboarding/step2');
   };
 

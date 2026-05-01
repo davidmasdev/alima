@@ -16,12 +16,15 @@ import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { NumberInput } from '@/components/ui/NumberInput';
 import { Colors } from '@/constants/Colors';
+import { ApiError } from '@/services/api';
+import { profileService } from '@/services/profile';
 
 interface FormErrors {
   activity?: string;
   goal?: string;
   weight?: string;
   height?: string;
+  form?: string;
 }
 
 const activityOptions = [
@@ -97,11 +100,35 @@ export default function OnboardingStep2Screen() {
     if (!validateForm()) return;
 
     setIsLoading(true);
-    
-    setTimeout(() => {
-      setIsLoading(false);
+
+    try {
+      const draft = await profileService.getOnboardingDraft();
+      if (!draft) {
+        setErrors({ form: 'Completa primero el paso 1' });
+        router.replace('/onboarding/step1');
+        return;
+      }
+
+      await profileService.saveProfile({
+        nombre: draft.nombre,
+        fecha_nacimiento: draft.fecha_nacimiento,
+        sexo: draft.sexo,
+        nivel_actividad: activity,
+        objetivo: goal,
+        peso: Number(weight),
+        altura: Number(height),
+      });
+      await profileService.clearOnboardingDraft();
       router.replace('/(tabs)/today');
-    }, 1500);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setErrors({ form: error.detail });
+      } else {
+        setErrors({ form: 'No se pudo guardar tu información' });
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleBack = () => {
@@ -210,6 +237,9 @@ export default function OnboardingStep2Screen() {
           </View>
 
           <View style={styles.buttonContainer}>
+            {errors.form && (
+              <Text style={styles.formErrorText}>{errors.form}</Text>
+            )}
             <Button
               title="Enviar"
               onPress={handleSubmit}
@@ -304,5 +334,12 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     width: '100%',
+  },
+  formErrorText: {
+    color: Colors.error,
+    fontSize: 13,
+    fontWeight: '500',
+    marginBottom: 12,
+    textAlign: 'center',
   },
 });
