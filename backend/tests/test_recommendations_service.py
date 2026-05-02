@@ -183,7 +183,7 @@ def test_generate_recommendation_saves_ai_result(monkeypatch: pytest.MonkeyPatch
     monkeypatch.setattr(
         recommendations,
         "call_gemini",
-        lambda prompt, ai_client=None: """
+        lambda prompt, ai_client=None, response_schema=None: """
         {
           "nombre": "Ensalada de pollo",
           "alimentos": [

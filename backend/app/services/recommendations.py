@@ -221,7 +221,11 @@ def parse_recommendation_content(raw_result: str) -> RecommendationContent:
         ) from error
 
 
-def call_gemini(prompt: str, client: AiClient | None = None) -> str:
+def call_gemini(
+    prompt: str,
+    client: AiClient | None = None,
+    response_schema: dict[str, Any] | None = None,
+) -> str:
     settings = get_settings()
     if not settings.gemini_api_key:
         raise HTTPException(
@@ -267,7 +271,7 @@ def call_gemini(prompt: str, client: AiClient | None = None) -> str:
                         "thinkingBudget": settings.ai_thinking_budget,
                     },
                     "responseMimeType": "application/json",
-                    "responseSchema": GEMINI_RECOMMENDATION_SCHEMA,
+                    "responseSchema": response_schema or GEMINI_RECOMMENDATION_SCHEMA,
                 },
             },
             timeout=settings.ai_request_timeout_seconds,
@@ -335,7 +339,7 @@ def generate_recommendation(
     remaining = calculate_remaining(daily_log, targets)
     user_prompt = (payload.prompt or "").strip()
     ai_prompt = build_ai_prompt(user, daily_log, targets, remaining, user_prompt)
-    result = call_gemini(ai_prompt, ai_client)
+    result = call_gemini(ai_prompt, ai_client, GEMINI_RECOMMENDATION_SCHEMA)
     content = parse_recommendation_content(result)
     structured_result = content.model_dump_json()
 

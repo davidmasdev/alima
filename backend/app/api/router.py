@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.api import analysis
 from app.api import auth
 from app.api import daily_log
 from app.api import foods
@@ -11,6 +12,7 @@ from app.api import templates
 
 
 api_router = APIRouter()
+api_router.include_router(analysis.router, prefix="/analysis", tags=["analysis"])
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(daily_log.router, prefix="/daily-log", tags=["daily-log"])
 api_router.include_router(foods.router, prefix="/foods", tags=["foods"])

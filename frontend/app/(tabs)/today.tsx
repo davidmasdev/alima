@@ -18,10 +18,12 @@ import { NumberInput } from '@/components/ui/NumberInput';
 import { Select } from '@/components/ui/Select';
 import { Colors } from '@/constants/Colors';
 import { ApiError } from '@/services/api';
+import { analysisService } from '@/services/analysis';
 import { dailyLogService } from '@/services/dailyLog';
 import { profileService } from '@/services/profile';
 import { recommendationsService } from '@/services/recommendations';
 import { templatesService } from '@/services/templates';
+import type { AnalysisResponse } from '@/types/analysis';
 import type { DailyEntry, DailyLog, Food, MealLog } from '@/types/dailyLog';
 import type { Profile } from '@/types/profile';
 import type { RecommendationResponse } from '@/types/recommendations';
@@ -65,6 +67,7 @@ export default function TodayScreen() {
   const [templates, setTemplates] = useState<MealTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
+  const [isAnalysisModalVisible, setIsAnalysisModalVisible] = useState(false);
   const [isRecommendationModalVisible, setIsRecommendationModalVisible] = useState(false);
   const [isTemplateModalVisible, setIsTemplateModalVisible] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState('');
@@ -75,11 +78,14 @@ export default function TodayScreen() {
   const [unit, setUnit] = useState<'g' | 'ml'>('g');
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
+  const [isGeneratingAnalysis, setIsGeneratingAnalysis] = useState(false);
   const [isGeneratingRecommendation, setIsGeneratingRecommendation] = useState(false);
   const [isAddingRecommendation, setIsAddingRecommendation] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
   const [entryToDelete, setEntryToDelete] = useState<DailyEntry | null>(null);
+  const [analysis, setAnalysis] = useState<AnalysisResponse | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [recommendationPrompt, setRecommendationPrompt] = useState('');
   const [recommendationMealType, setRecommendationMealType] = useState('');
   const [recommendation, setRecommendation] = useState<RecommendationResponse | null>(null);
@@ -144,6 +150,35 @@ export default function TodayScreen() {
 
   const closeAddModal = () => {
     setIsAddModalVisible(false);
+  };
+
+  const openAnalysisModal = () => {
+    setAnalysis(null);
+    setAnalysisError(null);
+    setIsAnalysisModalVisible(true);
+  };
+
+  const closeAnalysisModal = () => {
+    if (!isGeneratingAnalysis) {
+      setIsAnalysisModalVisible(false);
+    }
+  };
+
+  const handleGenerateAnalysis = async () => {
+    setIsGeneratingAnalysis(true);
+    setAnalysisError(null);
+    try {
+      const result = await analysisService.createAnalysis({ fecha: dateKey });
+      setAnalysis(result);
+    } catch (caughtError) {
+      if (caughtError instanceof ApiError) {
+        setAnalysisError(caughtError.detail);
+      } else {
+        setAnalysisError('No se pudo generar el analisis');
+      }
+    } finally {
+      setIsGeneratingAnalysis(false);
+    }
   };
 
   const openRecommendationModal = () => {
@@ -506,6 +541,19 @@ export default function TodayScreen() {
             {meals.map(renderMeal)}
 
             <TouchableOpacity
+              style={[styles.aiButton, styles.analysisButton]}
+              onPress={openAnalysisModal}
+              accessibilityRole="button"
+              accessibilityLabel="Analizar dieta con IA"
+            >
+              <View style={styles.aiButtonTextGroup}>
+                <Text style={styles.aiButtonTitle}>Analizar dieta</Text>
+                <Text style={styles.aiButtonSubtitle}>Ultimos 7 dias registrados</Text>
+              </View>
+              <FontAwesome name="bar-chart" size={22} color={Colors.textWhite} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
               style={styles.aiButton}
               onPress={openRecommendationModal}
               accessibilityRole="button"
@@ -527,6 +575,92 @@ export default function TodayScreen() {
           </>
         )}
       </ScrollView>
+
+      <Modal
+        visible={isAnalysisModalVisible}
+        transparent
+        animationType="none"
+        onRequestClose={closeAnalysisModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Analisis IA</Text>
+
+            <ScrollView
+              contentContainerStyle={styles.modalScrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {!analysis && (
+                <View style={styles.remainingBox}>
+                  <Text style={styles.remainingTitle}>Historial reciente</Text>
+                  <Text style={styles.remainingText}>
+                    Se analizaran los ultimos 7 dias. Necesitas al menos 3 dias con comidas.
+                  </Text>
+                </View>
+              )}
+
+              {analysisError && <Text style={styles.errorText}>{analysisError}</Text>}
+
+              {analysis && (
+                <View style={styles.analysisCard}>
+                  <View style={styles.analysisTable}>
+                    <View style={styles.analysisRow}>
+                      <Text style={styles.analysisLabel}>Proteinas</Text>
+                      <Text style={styles.analysisValue}>{analysis.estado_proteinas}</Text>
+                    </View>
+                    <View style={styles.analysisRow}>
+                      <Text style={styles.analysisLabel}>Carbohidratos</Text>
+                      <Text style={styles.analysisValue}>{analysis.estado_carbohidratos}</Text>
+                    </View>
+                    <View style={styles.analysisRow}>
+                      <Text style={styles.analysisLabel}>Grasas</Text>
+                      <Text style={styles.analysisValue}>{analysis.estado_grasas}</Text>
+                    </View>
+                    <View style={styles.analysisRow}>
+                      <Text style={styles.analysisLabel}>Micronutrientes</Text>
+                      <Text style={styles.analysisValue}>{analysis.estado_micronutrientes}</Text>
+                    </View>
+                  </View>
+
+                  <Text style={styles.analysisAdvice}>Consejo: {analysis.consejo}</Text>
+                  <Text style={styles.analysisScore}>
+                    Puntuacion: {Math.round(analysis.puntuacion)}/100
+                  </Text>
+                  <Text style={styles.analysisDays}>
+                    {analysis.dias_analizados} dias analizados
+                  </Text>
+                </View>
+              )}
+
+              {!analysis && (
+                <Button
+                  title="Analizar dieta"
+                  onPress={handleGenerateAnalysis}
+                  loading={isGeneratingAnalysis}
+                  size="large"
+                  style={styles.modalActionButton}
+                />
+              )}
+              {analysis && (
+                <Button
+                  title="Reanalizar"
+                  onPress={handleGenerateAnalysis}
+                  loading={isGeneratingAnalysis}
+                  size="large"
+                  style={styles.modalActionButton}
+                />
+              )}
+              <Button
+                title={analysis ? 'Aceptar' : 'Cancelar'}
+                onPress={closeAnalysisModal}
+                variant={analysis ? 'primary' : 'secondary'}
+                size="large"
+                style={styles.modalActionButton}
+              />
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
 
       <Modal
         visible={isAddModalVisible}
@@ -1104,6 +1238,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  analysisButton: {
+    backgroundColor: Colors.secondary,
+  },
   aiButtonTextGroup: {
     flex: 1,
   },
@@ -1217,6 +1354,58 @@ const styles = StyleSheet.create({
     color: Colors.text,
     fontSize: 16,
     fontWeight: '800',
+  },
+  analysisCard: {
+    gap: 18,
+  },
+  analysisTable: {
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  analysisRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderLight,
+  },
+  analysisLabel: {
+    flex: 1,
+    paddingVertical: 13,
+    paddingHorizontal: 10,
+    borderRightWidth: 1,
+    borderRightColor: Colors.borderLight,
+    color: Colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  analysisValue: {
+    flex: 1,
+    paddingVertical: 13,
+    paddingHorizontal: 10,
+    color: Colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  analysisAdvice: {
+    color: Colors.textSecondary,
+    fontSize: 15,
+    fontWeight: '600',
+    lineHeight: 21,
+    paddingHorizontal: 8,
+  },
+  analysisScore: {
+    color: Colors.primaryDark,
+    fontSize: 18,
+    fontWeight: '800',
+    textAlign: 'center',
+    textDecorationLine: 'underline',
+  },
+  analysisDays: {
+    color: Colors.textLight,
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   remainingBox: {
     backgroundColor: Colors.backgroundSecondary,
