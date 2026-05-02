@@ -47,3 +47,8 @@ class Usuario(UUIDPrimaryKeyMixin, Base):
         cascade="all, delete-orphan",
         order_by="TipoComidaUsuario.orden",
     )
+    registros_peso: Mapped[list["RegistroPeso"]] = relationship(
+        "RegistroPeso",
+        back_populates="usuario",
+        cascade="all, delete-orphan",
+    )

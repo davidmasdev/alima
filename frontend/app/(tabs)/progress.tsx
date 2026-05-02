@@ -1,53 +1,342 @@
-import React from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  StatusBar,
+  ActivityIndicator,
   ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesome } from '@expo/vector-icons';
+import Svg, { Circle, Line, Path, Polyline, Text as SvgText } from 'react-native-svg';
 import { Colors } from '@/constants/Colors';
+import { progressService } from '@/services/progress';
+import type { ProgressDay, ProgressRange, ProgressResponse, WeightPoint } from '@/types/progress';
+
+const ranges: { value: ProgressRange; label: string }[] = [
+  { value: 'week', label: 'Semana' },
+  { value: 'month', label: 'Mes' },
+  { value: 'total', label: 'Total' },
+];
+
+const chartWidth = 320;
+const chartHeight = 210;
+const chartPadding = 28;
+const weekDayLabels = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
+
+function formatDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function formatShortDate(value: string): string {
+  const date = new Date(`${value}T00:00:00`);
+  return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+}
+
+function buildLinePath(points: { x: number; y: number }[]): string {
+  if (points.length === 0) return '';
+  return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
+}
+
+function buildAreaPath(points: { x: number; y: number }[]): string {
+  if (points.length === 0) return '';
+  const bottom = chartHeight - chartPadding;
+  return `${buildLinePath(points)} L ${points[points.length - 1].x} ${bottom} L ${points[0].x} ${bottom} Z`;
+}
+
+function buildPoints(values: number[]): { x: number; y: number }[] {
+  if (values.length === 0) return [];
+  const min = Math.min(...values, 0);
+  const max = Math.max(...values, 1);
+  const span = max - min || 1;
+  const width = chartWidth - chartPadding * 2;
+  const height = chartHeight - chartPadding * 2;
+
+  return values.map((value, index) => ({
+    x: chartPadding + (values.length === 1 ? width / 2 : (width * index) / (values.length - 1)),
+    y: chartPadding + height - ((value - min) / span) * height,
+  }));
+}
+
+function ProgressChart({
+  calories,
+  weights,
+  goal,
+}: {
+  calories: ProgressDay[];
+  weights: WeightPoint[];
+  goal: number | null;
+}) {
+  const calorieValues = calories.map((day) => day.calorias);
+  const caloriePoints = buildPoints(calorieValues);
+  const weightPoints = buildPoints(weights.map((item) => item.peso));
+  const goalY = goal && calorieValues.length > 0
+    ? buildPoints([...calorieValues, goal]).at(-1)?.y
+    : null;
+
+  if (calories.length === 0) {
+    return (
+      <View style={styles.chartEmpty}>
+        <FontAwesome name="area-chart" size={42} color={Colors.border} />
+        <Text style={styles.chartEmptyText}>Registra comidas para ver tu grafico</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.chartFrame}>
+      <Svg width="100%" height={chartHeight} viewBox={`0 0 ${chartWidth} ${chartHeight}`}>
+        <Line
+          x1={chartPadding}
+          y1={chartHeight - chartPadding}
+          x2={chartWidth - chartPadding}
+          y2={chartHeight - chartPadding}
+          stroke={Colors.border}
+          strokeWidth="1"
+        />
+        <Line
+          x1={chartPadding}
+          y1={chartPadding}
+          x2={chartPadding}
+          y2={chartHeight - chartPadding}
+          stroke={Colors.border}
+          strokeWidth="1"
+        />
+        {goalY && (
+          <Line
+            x1={chartPadding}
+            y1={goalY}
+            x2={chartWidth - chartPadding}
+            y2={goalY}
+            stroke={Colors.primaryLight}
+            strokeDasharray="5 5"
+            strokeWidth="1.5"
+          />
+        )}
+        <Path d={buildAreaPath(caloriePoints)} fill="rgba(45, 212, 191, 0.18)" />
+        <Path
+          d={buildLinePath(caloriePoints)}
+          fill="none"
+          stroke={Colors.primaryDark}
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        {weightPoints.length >= 2 && (
+          <Polyline
+            points={weightPoints.map((point) => `${point.x},${point.y}`).join(' ')}
+            fill="none"
+            stroke={Colors.secondary}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        )}
+        {caloriePoints.map((point, index) => (
+          <Circle
+            key={`${point.x}-${index}`}
+            cx={point.x}
+            cy={point.y}
+            r="4"
+            fill={Colors.backgroundCard}
+            stroke={Colors.primaryDark}
+            strokeWidth="2"
+          />
+        ))}
+        <SvgText x={chartPadding} y={chartHeight - 6} fill={Colors.textLight} fontSize="10">
+          {calories[0] ? formatShortDate(calories[0].fecha) : ''}
+        </SvgText>
+        <SvgText
+          x={chartWidth - chartPadding - 28}
+          y={chartHeight - 6}
+          fill={Colors.textLight}
+          fontSize="10"
+        >
+          {calories.at(-1) ? formatShortDate(calories[calories.length - 1].fecha) : ''}
+        </SvgText>
+      </Svg>
+      <View style={styles.legendRow}>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDot, styles.calorieDot]} />
+          <Text style={styles.legendText}>Calorias</Text>
+        </View>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDot, styles.weightDot]} />
+          <Text style={styles.legendText}>Peso</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function getDayColor(day: ProgressDay): string {
+  if (!day.registrado) return Colors.border;
+  return day.cumplido ? Colors.success : Colors.error;
+}
 
 export default function ProgressScreen() {
+  const [selectedRange, setSelectedRange] = useState<ProgressRange>('week');
+  const [progress, setProgress] = useState<ProgressResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const anchorDate = useMemo(() => formatDate(new Date()), []);
+
+  const loadProgress = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await progressService.getProgress(selectedRange, anchorDate);
+      setProgress(data);
+    } catch {
+      setError('No se pudo cargar el progreso');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [anchorDate, selectedRange]);
+
+  useEffect(() => {
+    loadProgress();
+  }, [loadProgress]);
+
+  const days = progress?.days ?? [];
+  const hasHistory = (progress?.summary.dias_registrados ?? 0) > 0;
+  const completionRate = progress?.summary.dias_registrados
+    ? Math.round((progress.summary.dias_cumplidos / progress.summary.dias_registrados) * 100)
+    : 0;
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
-      
       <View style={styles.headerBackground} />
-      
+
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
           <Text style={styles.title}>Progreso</Text>
-          <Text style={styles.subtitle}>Visualiza tu evolución</Text>
+          <Text style={styles.subtitle}>Historial de dieta y peso</Text>
         </View>
 
-        <View style={styles.summaryCard}>
-          <Text style={styles.cardTitle}>Esta semana</Text>
-          
-          <View style={styles.statsRow}>
-            <View style={styles.statBox}>
-              <Text style={styles.statValue}>0</Text>
-              <Text style={styles.statLabel}>comidas</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statValue}>0</Text>
-              <Text style={styles.statLabel}>kcal</Text>
-            </View>
-          </View>
+        <View style={styles.segmentedControl}>
+          {ranges.map((range) => (
+            <TouchableOpacity
+              key={range.value}
+              style={[
+                styles.segmentButton,
+                selectedRange === range.value && styles.segmentButtonActive,
+              ]}
+              onPress={() => setSelectedRange(range.value)}
+              accessibilityRole="button"
+              accessibilityLabel={`Ver ${range.label}`}
+            >
+              <Text
+                style={[
+                  styles.segmentText,
+                  selectedRange === range.value && styles.segmentTextActive,
+                ]}
+              >
+                {range.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
-        <View style={styles.chartContainer}>
-          <Text style={styles.chartTitle}>Gráfico de progreso</Text>
-          <View style={styles.chartPlaceholder}>
-            <FontAwesome name="area-chart" size={48} color={Colors.border} />
-            <Text style={styles.chartText}>Los datos aparecerán aquí</Text>
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator color={Colors.primary} />
           </View>
-        </View>
+        ) : (
+          <>
+            {error && <Text style={styles.errorText}>{error}</Text>}
+
+            {!hasHistory ? (
+              <View style={styles.emptyState}>
+                <FontAwesome name="calendar-check-o" size={54} color={Colors.border} />
+                <Text style={styles.emptyTitle}>Empieza tu historial</Text>
+                <Text style={styles.emptyText}>
+                  Registra comidas en la vista diaria para ver tu progreso.
+                </Text>
+              </View>
+            ) : (
+              <>
+                <View style={styles.chartCard}>
+                  <View style={styles.chartHeader}>
+                    <View>
+                      <Text style={styles.cardTitle}>Grafico de progreso</Text>
+                      <Text style={styles.cardSubtitle}>
+                        {progress?.weight_series.length && progress.weight_series.length >= 2
+                          ? 'Calorias y peso'
+                          : 'Calorias consumidas'}
+                      </Text>
+                    </View>
+                    <View style={styles.completionPill}>
+                      <Text style={styles.completionText}>{completionRate}%</Text>
+                    </View>
+                  </View>
+                  <ProgressChart
+                    calories={progress?.calories_series ?? []}
+                    weights={progress?.weight_series ?? []}
+                    goal={progress?.objetivo_calorias ?? null}
+                  />
+                </View>
+
+                <View style={styles.summaryGrid}>
+                  <View style={styles.statBox}>
+                    <Text style={styles.statValue}>{progress?.summary.dias_registrados ?? 0}</Text>
+                    <Text style={styles.statLabel}>dias</Text>
+                  </View>
+                  <View style={styles.statBox}>
+                    <Text style={styles.statValue}>{progress?.summary.dias_cumplidos ?? 0}</Text>
+                    <Text style={styles.statLabel}>cumplidos</Text>
+                  </View>
+                  <View style={styles.statBox}>
+                    <Text style={styles.statValue}>
+                      {Math.round(progress?.summary.calorias_promedio ?? 0)}
+                    </Text>
+                    <Text style={styles.statLabel}>kcal media</Text>
+                  </View>
+                  <View style={styles.statBox}>
+                    <Text style={styles.statValue}>{progress?.summary.racha_actual ?? 0}</Text>
+                    <Text style={styles.statLabel}>racha</Text>
+                  </View>
+                </View>
+
+                <View style={styles.calendarCard}>
+                  <Text style={styles.cardTitle}>Calendario</Text>
+                  <View style={styles.calendarGrid}>
+                    {days.map((day) => {
+                      const date = new Date(`${day.fecha}T00:00:00`);
+                      return (
+                        <View key={day.fecha} style={styles.dayCell}>
+                          <Text style={styles.dayName}>{weekDayLabels[date.getDay()]}</Text>
+                          <View style={[styles.dayBubble, { borderColor: getDayColor(day) }]}>
+                            <Text style={styles.dayNumber}>{date.getDate()}</Text>
+                            <View
+                              style={[
+                                styles.statusDot,
+                                { backgroundColor: getDayColor(day) },
+                              ]}
+                            />
+                          </View>
+                          <Text style={styles.dayCalories}>
+                            {day.registrado ? `${Math.round(day.calorias)}` : '-'}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                </View>
+              </>
+            )}
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -73,86 +362,237 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   header: {
-    marginBottom: 32,
+    marginBottom: 24,
   },
   title: {
     fontSize: 32,
     fontWeight: '800',
     color: Colors.text,
     marginBottom: 8,
-    letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 16,
     color: Colors.textSecondary,
     fontWeight: '500',
   },
-  summaryCard: {
-    backgroundColor: Colors.backgroundCard,
-    borderRadius: 20,
-    padding: 24,
-    marginBottom: 24,
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.text,
+  segmentedControl: {
+    flexDirection: 'row',
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: 14,
+    padding: 4,
     marginBottom: 20,
   },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  statBox: {
+  segmentButton: {
     flex: 1,
-    backgroundColor: Colors.backgroundSecondary,
-    borderRadius: 16,
-    padding: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
     alignItems: 'center',
   },
-  statValue: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: Colors.text,
-    marginBottom: 4,
+  segmentButtonActive: {
+    backgroundColor: Colors.primary,
   },
-  statLabel: {
-    fontSize: 14,
+  segmentText: {
     color: Colors.textSecondary,
-    fontWeight: '500',
+    fontSize: 14,
+    fontWeight: '700',
   },
-  chartContainer: {
+  segmentTextActive: {
+    color: Colors.textWhite,
+  },
+  loadingContainer: {
+    paddingVertical: 60,
+  },
+  errorText: {
+    color: Colors.error,
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginVertical: 8,
+  },
+  emptyState: {
     backgroundColor: Colors.backgroundCard,
     borderRadius: 20,
-    padding: 24,
+    padding: 34,
+    alignItems: 'center',
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  chartTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+  emptyTitle: {
     color: Colors.text,
-    marginBottom: 20,
+    fontSize: 20,
+    fontWeight: '800',
+    marginTop: 16,
+    marginBottom: 8,
   },
-  chartPlaceholder: {
-    height: 200,
-    backgroundColor: Colors.backgroundSecondary,
+  emptyText: {
+    color: Colors.textSecondary,
+    fontSize: 15,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  chartCard: {
+    backgroundColor: Colors.backgroundCard,
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 18,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  chartHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  cardTitle: {
+    color: Colors.text,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  cardSubtitle: {
+    color: Colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '600',
+    marginTop: 3,
+  },
+  completionPill: {
+    backgroundColor: Colors.primaryMuted,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     borderRadius: 16,
+  },
+  completionText: {
+    color: Colors.primaryDark,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  chartFrame: {
+    alignItems: 'center',
+  },
+  chartEmpty: {
+    height: chartHeight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: 14,
+  },
+  chartEmptyText: {
+    color: Colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 12,
+  },
+  legendRow: {
+    flexDirection: 'row',
+    gap: 18,
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  legendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  calorieDot: {
+    backgroundColor: Colors.primaryDark,
+  },
+  weightDot: {
+    backgroundColor: Colors.secondary,
+  },
+  legendText: {
+    color: Colors.textSecondary,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  summaryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 18,
+  },
+  statBox: {
+    width: '48%',
+    backgroundColor: Colors.backgroundCard,
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  statValue: {
+    color: Colors.text,
+    fontSize: 24,
+    fontWeight: '800',
+  },
+  statLabel: {
+    color: Colors.textSecondary,
+    fontSize: 12,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+  calendarCard: {
+    backgroundColor: Colors.backgroundCard,
+    borderRadius: 20,
+    padding: 18,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  calendarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginTop: 16,
+  },
+  dayCell: {
+    width: 46,
+    alignItems: 'center',
+    gap: 5,
+  },
+  dayName: {
+    color: Colors.textSecondary,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  dayBubble: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderWidth: 2,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  chartText: {
-    fontSize: 15,
-    color: Colors.textSecondary,
-    fontWeight: '500',
-    marginTop: 12,
+  dayNumber: {
+    color: Colors.text,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  statusDot: {
+    position: 'absolute',
+    bottom: 3,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  dayCalories: {
+    color: Colors.textLight,
+    fontSize: 10,
+    fontWeight: '700',
   },
 });

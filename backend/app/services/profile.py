@@ -1,9 +1,11 @@
 from datetime import date
 
 from fastapi import HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.perfil_nutricional import PerfilNutricional
+from app.models.registro_peso import RegistroPeso
 from app.models.usuario import Usuario
 from app.schemas.profile import ProfileResponse, ProfileUpsertRequest
 
@@ -99,6 +101,19 @@ def upsert_profile(
     profile.nivel_actividad = payload.nivel_actividad
     profile.objetivo = payload.objetivo
     profile.calorias_diarias = calculate_daily_calories(payload)
+
+    if hasattr(db, "scalar"):
+        today = date.today()
+        weight_record = db.scalar(
+            select(RegistroPeso).where(
+                RegistroPeso.usuario_id == user.id,
+                RegistroPeso.fecha == today,
+            )
+        )
+        if weight_record is None:
+            db.add(RegistroPeso(usuario=user, fecha=today, peso=payload.peso))
+        else:
+            weight_record.peso = payload.peso
 
     db.add(user)
     db.commit()
