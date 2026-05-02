@@ -20,9 +20,11 @@ import { Colors } from '@/constants/Colors';
 import { ApiError } from '@/services/api';
 import { dailyLogService } from '@/services/dailyLog';
 import { profileService } from '@/services/profile';
+import { recommendationsService } from '@/services/recommendations';
 import { templatesService } from '@/services/templates';
 import type { DailyEntry, DailyLog, Food, MealLog } from '@/types/dailyLog';
 import type { Profile } from '@/types/profile';
+import type { RecommendationResponse } from '@/types/recommendations';
 import type { MealTemplate } from '@/types/templates';
 
 const unitOptions = [
@@ -63,6 +65,7 @@ export default function TodayScreen() {
   const [templates, setTemplates] = useState<MealTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
+  const [isRecommendationModalVisible, setIsRecommendationModalVisible] = useState(false);
   const [isTemplateModalVisible, setIsTemplateModalVisible] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState('');
   const [query, setQuery] = useState('');
@@ -72,9 +75,15 @@ export default function TodayScreen() {
   const [unit, setUnit] = useState<'g' | 'ml'>('g');
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
+  const [isGeneratingRecommendation, setIsGeneratingRecommendation] = useState(false);
+  const [isAddingRecommendation, setIsAddingRecommendation] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
   const [entryToDelete, setEntryToDelete] = useState<DailyEntry | null>(null);
+  const [recommendationPrompt, setRecommendationPrompt] = useState('');
+  const [recommendationMealType, setRecommendationMealType] = useState('');
+  const [recommendation, setRecommendation] = useState<RecommendationResponse | null>(null);
+  const [recommendationError, setRecommendationError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const dateKey = useMemo(() => formatDate(selectedDate), [selectedDate]);
@@ -135,6 +144,71 @@ export default function TodayScreen() {
 
   const closeAddModal = () => {
     setIsAddModalVisible(false);
+  };
+
+  const openRecommendationModal = () => {
+    setRecommendationPrompt('');
+    setRecommendationMealType(dailyLog?.meal_types[0] ?? 'Desayuno');
+    setRecommendation(null);
+    setRecommendationError(null);
+    setIsRecommendationModalVisible(true);
+  };
+
+  const closeRecommendationModal = () => {
+    if (!isGeneratingRecommendation && !isAddingRecommendation) {
+      setIsRecommendationModalVisible(false);
+    }
+  };
+
+  const handleGenerateRecommendation = async () => {
+    if (!profile?.peso || !profile.calorias_diarias) {
+      setRecommendationError('Completa tu perfil nutricional antes de pedir recomendaciones');
+      return;
+    }
+
+    setIsGeneratingRecommendation(true);
+    setRecommendationError(null);
+    try {
+      const result = await recommendationsService.createRecommendation({
+        fecha: dateKey,
+        prompt: recommendationPrompt.trim() || undefined,
+      });
+      setRecommendation(result);
+    } catch (caughtError) {
+      if (caughtError instanceof ApiError) {
+        setRecommendationError(caughtError.detail);
+      } else {
+        setRecommendationError('No se pudo generar la recomendacion');
+      }
+    } finally {
+      setIsGeneratingRecommendation(false);
+    }
+  };
+
+  const handleAddRecommendationToMeal = async () => {
+    if (!recommendation) return;
+
+    setIsAddingRecommendation(true);
+    setRecommendationError(null);
+    try {
+      const updatedLog = await recommendationsService.addRecommendationToMeal(
+        recommendation.id,
+        {
+          fecha: dateKey,
+          tipo: recommendationMealType,
+        },
+      );
+      setDailyLog(updatedLog);
+      setIsRecommendationModalVisible(false);
+    } catch (caughtError) {
+      if (caughtError instanceof ApiError) {
+        setRecommendationError(caughtError.detail);
+      } else {
+        setRecommendationError('No se pudo anadir la recomendacion');
+      }
+    } finally {
+      setIsAddingRecommendation(false);
+    }
   };
 
   const openTemplateModal = async () => {
@@ -431,6 +505,19 @@ export default function TodayScreen() {
 
             {meals.map(renderMeal)}
 
+            <TouchableOpacity
+              style={styles.aiButton}
+              onPress={openRecommendationModal}
+              accessibilityRole="button"
+              accessibilityLabel="Pedir recomendacion de IA"
+            >
+              <View style={styles.aiButtonTextGroup}>
+                <Text style={styles.aiButtonTitle}>Recomendacion IA</Text>
+                <Text style={styles.aiButtonSubtitle}>Segun lo que llevas hoy</Text>
+              </View>
+              <FontAwesome name="magic" size={22} color={Colors.textWhite} />
+            </TouchableOpacity>
+
             <Button
               title="Añadir comida"
               onPress={() => openAddModal()}
@@ -549,6 +636,138 @@ export default function TodayScreen() {
               <Button
                 title="Cancelar"
                 onPress={closeAddModal}
+                variant="secondary"
+                size="large"
+                style={styles.modalActionButton}
+              />
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={isRecommendationModalVisible}
+        transparent
+        animationType="none"
+        onRequestClose={closeRecommendationModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Recomendacion IA</Text>
+
+            <ScrollView
+              contentContainerStyle={styles.modalScrollContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              <Input
+                label="Que te apetece?"
+                placeholder="Algo ligero con arroz, por ejemplo"
+                value={recommendationPrompt}
+                onChangeText={setRecommendationPrompt}
+                icon="magic"
+              />
+
+              <View style={styles.remainingBox}>
+                <Text style={styles.remainingTitle}>Restante aproximado</Text>
+                <Text style={styles.remainingText}>
+                  {Math.max(0, round(caloriesGoal - totals.calorias))} Kcal ·{' '}
+                  {Math.max(0, round(proteinGoal - totals.proteinas))}g proteinas
+                </Text>
+              </View>
+
+              {recommendationError && (
+                <Text style={styles.errorText}>{recommendationError}</Text>
+              )}
+
+              {recommendation && (
+                <View style={styles.recommendationCard}>
+                  <View style={styles.recommendationHeader}>
+                    <View style={styles.recommendationIcon}>
+                      <FontAwesome name="magic" size={18} color={Colors.textWhite} />
+                    </View>
+                    <View style={styles.recommendationTitleGroup}>
+                      <Text style={styles.recommendationTitle}>
+                        {recommendation.contenido.nombre}
+                      </Text>
+                      <Text style={styles.recommendationMeta}>
+                        {round(recommendation.contenido.calorias)} Kcal ·{' '}
+                        {round(recommendation.contenido.proteinas)}g proteinas
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.recommendationTable}>
+                    <View style={styles.tableHeader}>
+                      <Text style={[styles.tableCell, styles.foodCell]}>Alimento</Text>
+                      <Text style={styles.tableCell}>Cantidad</Text>
+                      <Text style={styles.tableCell}>Kcal</Text>
+                    </View>
+                    {recommendation.contenido.alimentos.map((food, index) => (
+                      <View key={`${food.nombre}-${index}`} style={styles.tableRow}>
+                        <Text style={[styles.tableCell, styles.foodCell]}>{food.nombre}</Text>
+                        <Text style={styles.tableCell}>
+                          {round(food.cantidad)} {food.unidad}
+                        </Text>
+                        <Text style={styles.tableCell}>{round(food.calorias)}</Text>
+                      </View>
+                    ))}
+                  </View>
+
+                  <View style={styles.recommendationMacroRow}>
+                    <Text style={styles.recommendationMacro}>
+                      C {round(recommendation.contenido.carbohidratos)}g
+                    </Text>
+                    <Text style={styles.recommendationMacro}>
+                      P {round(recommendation.contenido.proteinas)}g
+                    </Text>
+                    <Text style={styles.recommendationMacro}>
+                      G {round(recommendation.contenido.grasas)}g
+                    </Text>
+                  </View>
+
+                  <Text style={styles.recommendationText}>
+                    {recommendation.contenido.explicacion}
+                  </Text>
+
+                  <Text style={styles.recommendationMeta}>
+                    Restantes: {round(recommendation.calorias_restantes)} Kcal ·{' '}
+                    {round(recommendation.proteinas_restantes)}g proteinas ·{' '}
+                    {round(recommendation.carbohidratos_restantes)}g carbos ·{' '}
+                    {round(recommendation.grasas_restantes)}g grasas
+                  </Text>
+                </View>
+              )}
+
+              {recommendation && (
+                <>
+                  <Select
+                    label="Anadir a comida"
+                    placeholder="Selecciona tipo"
+                    value={recommendationMealType}
+                    onSelect={setRecommendationMealType}
+                    options={mealTypeOptions}
+                  />
+                  <Button
+                    title="Anadir a comida"
+                    onPress={handleAddRecommendationToMeal}
+                    loading={isAddingRecommendation}
+                    size="large"
+                    style={styles.modalActionButton}
+                  />
+                </>
+              )}
+
+              <Button
+                title={recommendation ? 'Reintentar' : 'Generar recomendacion'}
+                onPress={handleGenerateRecommendation}
+                loading={isGeneratingRecommendation}
+                size="large"
+                style={styles.modalActionButton}
+              />
+              <Button
+                title="Cerrar"
+                onPress={closeRecommendationModal}
                 variant="secondary"
                 size="large"
                 style={styles.modalActionButton}
@@ -875,6 +1094,31 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: 4,
   },
+  aiButton: {
+    backgroundColor: Colors.primaryDark,
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    marginBottom: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  aiButtonTextGroup: {
+    flex: 1,
+  },
+  aiButtonTitle: {
+    color: Colors.textWhite,
+    fontSize: 17,
+    fontWeight: '800',
+  },
+  aiButtonSubtitle: {
+    color: Colors.textWhite,
+    opacity: 0.85,
+    fontSize: 13,
+    fontWeight: '600',
+    marginTop: 3,
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: Colors.overlayDark,
@@ -973,6 +1217,80 @@ const styles = StyleSheet.create({
     color: Colors.text,
     fontSize: 16,
     fontWeight: '800',
+  },
+  remainingBox: {
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: 14,
+    padding: 14,
+  },
+  remainingTitle: {
+    color: Colors.text,
+    fontSize: 15,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  remainingText: {
+    color: Colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  recommendationCard: {
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: 14,
+    padding: 16,
+    gap: 12,
+  },
+  recommendationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  recommendationIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: Colors.primaryDark,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  recommendationTitleGroup: {
+    flex: 1,
+  },
+  recommendationTitle: {
+    color: Colors.text,
+    fontSize: 17,
+    fontWeight: '800',
+    marginBottom: 3,
+  },
+  recommendationTable: {
+    backgroundColor: Colors.backgroundCard,
+    borderRadius: 12,
+    padding: 12,
+  },
+  recommendationMacroRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  recommendationMacro: {
+    flex: 1,
+    backgroundColor: Colors.primaryMuted,
+    borderRadius: 10,
+    paddingVertical: 8,
+    color: Colors.textSecondary,
+    fontSize: 12,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  recommendationMeta: {
+    color: Colors.primaryDark,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  recommendationText: {
+    color: Colors.text,
+    fontSize: 14,
+    fontWeight: '500',
+    lineHeight: 21,
   },
   qrButton: {
     backgroundColor: Colors.primaryMuted,
