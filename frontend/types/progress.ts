@@ -13,6 +13,11 @@ export interface WeightPoint {
   peso: number;
 }
 
+export interface WeightPayload {
+  fecha?: string;
+  peso: number;
+}
+
 export interface ProgressSummary {
   rango: ProgressRange;
   fecha_inicio: string | null;

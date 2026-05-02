@@ -1,6 +1,11 @@
 from datetime import date
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+
+class WeightUpsertRequest(BaseModel):
+    fecha: date | None = None
+    peso: float = Field(gt=0, le=500)
 
 
 class ProgressDayResponse(BaseModel):

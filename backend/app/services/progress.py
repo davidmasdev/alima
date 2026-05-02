@@ -9,12 +9,15 @@ from app.models.comida import Comida
 from app.models.registro import Registro
 from app.models.registro_peso import RegistroPeso
 from app.models.usuario import Usuario
+from app.schemas.profile import ProfileUpsertRequest
 from app.schemas.progress import (
     ProgressDayResponse,
     ProgressResponse,
     ProgressSummaryResponse,
+    WeightUpsertRequest,
     WeightPointResponse,
 )
+from app.services.profile import calculate_daily_calories
 
 
 VALID_RANGES = {"week", "month", "total"}
@@ -184,3 +187,48 @@ def get_progress(
         calories_series=registered_days,
         weight_series=weight_series,
     )
+
+
+def save_weight(
+    db: Session,
+    user: Usuario,
+    payload: WeightUpsertRequest,
+    range_name: str,
+    anchor_date: date,
+) -> ProgressResponse:
+    target_date = payload.fecha or date.today()
+    latest_weight_date = db.scalar(
+        select(func.max(RegistroPeso.fecha)).where(RegistroPeso.usuario_id == user.id)
+    )
+    weight_record = db.scalar(
+        select(RegistroPeso).where(
+            RegistroPeso.usuario_id == user.id,
+            RegistroPeso.fecha == target_date,
+        )
+    )
+
+    if weight_record is None:
+        db.add(RegistroPeso(usuario=user, fecha=target_date, peso=payload.peso))
+    else:
+        weight_record.peso = payload.peso
+
+    should_update_profile = latest_weight_date is None or target_date >= latest_weight_date
+    profile = user.perfil_nutricional
+    if should_update_profile and profile is not None:
+        profile.peso = payload.peso
+        if user.nombre and user.fecha_nacimiento:
+            profile.calorias_diarias = calculate_daily_calories(
+                ProfileUpsertRequest(
+                    nombre=user.nombre,
+                    fecha_nacimiento=user.fecha_nacimiento,
+                    sexo=profile.sexo,
+                    nivel_actividad=profile.nivel_actividad,
+                    objetivo=profile.objetivo,
+                    peso=payload.peso,
+                    altura=profile.altura,
+                )
+            )
+
+    db.commit()
+    db.refresh(user)
+    return get_progress(db, user, range_name, anchor_date)

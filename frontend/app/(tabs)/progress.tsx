@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Modal,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -11,7 +12,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesome } from '@expo/vector-icons';
 import Svg, { Circle, Line, Path, Polyline, Text as SvgText } from 'react-native-svg';
+import { Button } from '@/components/ui/Button';
+import { NumberInput } from '@/components/ui/NumberInput';
 import { Colors } from '@/constants/Colors';
+import { ApiError } from '@/services/api';
 import { progressService } from '@/services/progress';
 import type { ProgressDay, ProgressRange, ProgressResponse, WeightPoint } from '@/types/progress';
 
@@ -75,15 +79,18 @@ function ProgressChart({
   const calorieValues = calories.map((day) => day.calorias);
   const caloriePoints = buildPoints(calorieValues);
   const weightPoints = buildPoints(weights.map((item) => item.peso));
+  const labelPoints = calories.length > 0
+    ? calories.map((item) => item.fecha)
+    : weights.map((item) => item.fecha);
   const goalY = goal && calorieValues.length > 0
     ? buildPoints([...calorieValues, goal]).at(-1)?.y
     : null;
 
-  if (calories.length === 0) {
+  if (calories.length === 0 && weights.length === 0) {
     return (
       <View style={styles.chartEmpty}>
         <FontAwesome name="area-chart" size={42} color={Colors.border} />
-        <Text style={styles.chartEmptyText}>Registra comidas para ver tu grafico</Text>
+        <Text style={styles.chartEmptyText}>Registra comidas o peso para ver tu grafico</Text>
       </View>
     );
   }
@@ -118,15 +125,19 @@ function ProgressChart({
             strokeWidth="1.5"
           />
         )}
-        <Path d={buildAreaPath(caloriePoints)} fill="rgba(45, 212, 191, 0.18)" />
-        <Path
-          d={buildLinePath(caloriePoints)}
-          fill="none"
-          stroke={Colors.primaryDark}
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+        {caloriePoints.length > 0 && (
+          <>
+            <Path d={buildAreaPath(caloriePoints)} fill="rgba(45, 212, 191, 0.18)" />
+            <Path
+              d={buildLinePath(caloriePoints)}
+              fill="none"
+              stroke={Colors.primaryDark}
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </>
+        )}
         {weightPoints.length >= 2 && (
           <Polyline
             points={weightPoints.map((point) => `${point.x},${point.y}`).join(' ')}
@@ -137,6 +148,17 @@ function ProgressChart({
             strokeLinejoin="round"
           />
         )}
+        {weightPoints.map((point, index) => (
+          <Circle
+            key={`weight-${point.x}-${index}`}
+            cx={point.x}
+            cy={point.y}
+            r="4"
+            fill={Colors.backgroundCard}
+            stroke={Colors.secondary}
+            strokeWidth="2"
+          />
+        ))}
         {caloriePoints.map((point, index) => (
           <Circle
             key={`${point.x}-${index}`}
@@ -149,7 +171,7 @@ function ProgressChart({
           />
         ))}
         <SvgText x={chartPadding} y={chartHeight - 6} fill={Colors.textLight} fontSize="10">
-          {calories[0] ? formatShortDate(calories[0].fecha) : ''}
+          {labelPoints[0] ? formatShortDate(labelPoints[0]) : ''}
         </SvgText>
         <SvgText
           x={chartWidth - chartPadding - 28}
@@ -157,18 +179,22 @@ function ProgressChart({
           fill={Colors.textLight}
           fontSize="10"
         >
-          {calories.at(-1) ? formatShortDate(calories[calories.length - 1].fecha) : ''}
+          {labelPoints.at(-1) ? formatShortDate(labelPoints[labelPoints.length - 1]) : ''}
         </SvgText>
       </Svg>
       <View style={styles.legendRow}>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, styles.calorieDot]} />
-          <Text style={styles.legendText}>Calorias</Text>
-        </View>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, styles.weightDot]} />
-          <Text style={styles.legendText}>Peso</Text>
-        </View>
+        {calories.length > 0 && (
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, styles.calorieDot]} />
+            <Text style={styles.legendText}>Calorias</Text>
+          </View>
+        )}
+        {weights.length > 0 && (
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, styles.weightDot]} />
+            <Text style={styles.legendText}>Peso</Text>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -183,6 +209,10 @@ export default function ProgressScreen() {
   const [selectedRange, setSelectedRange] = useState<ProgressRange>('week');
   const [progress, setProgress] = useState<ProgressResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isWeightModalVisible, setIsWeightModalVisible] = useState(false);
+  const [isSavingWeight, setIsSavingWeight] = useState(false);
+  const [weight, setWeight] = useState('');
+  const [weightError, setWeightError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const anchorDate = useMemo(() => formatDate(new Date()), []);
@@ -205,10 +235,51 @@ export default function ProgressScreen() {
   }, [loadProgress]);
 
   const days = progress?.days ?? [];
-  const hasHistory = (progress?.summary.dias_registrados ?? 0) > 0;
+  const hasHistory =
+    (progress?.summary.dias_registrados ?? 0) > 0 || (progress?.weight_series.length ?? 0) > 0;
   const completionRate = progress?.summary.dias_registrados
     ? Math.round((progress.summary.dias_cumplidos / progress.summary.dias_registrados) * 100)
     : 0;
+  const latestWeight = progress?.weight_series.at(-1) ?? null;
+
+  const openWeightModal = () => {
+    setWeight(latestWeight ? String(latestWeight.peso) : '');
+    setWeightError(null);
+    setIsWeightModalVisible(true);
+  };
+
+  const closeWeightModal = () => {
+    if (!isSavingWeight) {
+      setIsWeightModalVisible(false);
+    }
+  };
+
+  const handleSaveWeight = async () => {
+    if (!weight.trim() || isNaN(Number(weight)) || Number(weight) <= 0) {
+      setWeightError('Ingresa un peso valido');
+      return;
+    }
+
+    setIsSavingWeight(true);
+    setWeightError(null);
+    try {
+      const updatedProgress = await progressService.saveWeight(
+        { peso: Number(weight) },
+        selectedRange,
+        anchorDate,
+      );
+      setProgress(updatedProgress);
+      setIsWeightModalVisible(false);
+    } catch (caughtError) {
+      if (caughtError instanceof ApiError) {
+        setWeightError(caughtError.detail);
+      } else {
+        setWeightError('No se pudo guardar el peso');
+      }
+    } finally {
+      setIsSavingWeight(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -246,6 +317,25 @@ export default function ProgressScreen() {
               </Text>
             </TouchableOpacity>
           ))}
+        </View>
+
+        <View style={styles.weightActionCard}>
+          <View style={styles.weightTextGroup}>
+            <Text style={styles.weightTitle}>Peso actual</Text>
+            <Text style={styles.weightSubtitle}>
+              {latestWeight
+                ? `${latestWeight.peso} kg - ${formatShortDate(latestWeight.fecha)}`
+                : 'Sin registros de peso'}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.weightButton}
+            onPress={openWeightModal}
+            accessibilityRole="button"
+            accessibilityLabel="Actualizar peso"
+          >
+            <FontAwesome name="plus" size={16} color={Colors.textWhite} />
+          </TouchableOpacity>
         </View>
 
         {isLoading ? (
@@ -338,6 +428,48 @@ export default function ProgressScreen() {
           </>
         )}
       </ScrollView>
+
+      <Modal
+        visible={isWeightModalVisible}
+        transparent
+        animationType="none"
+        onRequestClose={closeWeightModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.weightModalContent}>
+            <Text style={styles.modalTitle}>Actualizar peso</Text>
+            <Text style={styles.modalText}>Registra tu peso de hoy para ver la evolucion.</Text>
+
+            <NumberInput
+              label="Peso"
+              placeholder="0"
+              value={weight}
+              onChangeText={(text) => {
+                setWeight(text);
+                if (weightError) setWeightError(null);
+              }}
+              unit="kg"
+              keyboardType="decimal-pad"
+              error={weightError ?? undefined}
+            />
+
+            <Button
+              title="Guardar"
+              onPress={handleSaveWeight}
+              loading={isSavingWeight}
+              size="large"
+              style={styles.modalButton}
+            />
+            <Button
+              title="Cancelar"
+              onPress={closeWeightModal}
+              variant="secondary"
+              size="large"
+              style={styles.modalButton}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -382,6 +514,42 @@ const styles = StyleSheet.create({
     padding: 4,
     marginBottom: 20,
   },
+  weightActionCard: {
+    backgroundColor: Colors.backgroundCard,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 18,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  weightTextGroup: {
+    flex: 1,
+  },
+  weightTitle: {
+    color: Colors.text,
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  weightSubtitle: {
+    color: Colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  weightButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   segmentButton: {
     flex: 1,
     paddingVertical: 10,
@@ -408,6 +576,36 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
     marginVertical: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: Colors.overlayDark,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  weightModalContent: {
+    backgroundColor: Colors.backgroundCard,
+    borderRadius: 24,
+    padding: 24,
+    width: '100%',
+    maxWidth: 380,
+    gap: 16,
+  },
+  modalTitle: {
+    color: Colors.text,
+    fontSize: 24,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  modalText: {
+    color: Colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  modalButton: {
+    width: '100%',
   },
   emptyState: {
     backgroundColor: Colors.backgroundCard,
