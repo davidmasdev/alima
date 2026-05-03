@@ -570,7 +570,7 @@ export default function TodayScreen() {
             {meals.map(renderMeal)}
 
             <TouchableOpacity
-              style={[styles.aiButton, styles.analysisButton]}
+              style={styles.aiButton}
               onPress={openAnalysisModal}
               accessibilityRole="button"
               accessibilityLabel="Analizar dieta con IA"
@@ -579,7 +579,9 @@ export default function TodayScreen() {
                 <Text style={styles.aiButtonTitle}>Analizar dieta</Text>
                 <Text style={styles.aiButtonSubtitle}>Ultimos 7 dias registrados</Text>
               </View>
-              <FontAwesome name="bar-chart" size={22} color={colors.textWhite} />
+              <View style={styles.aiIconCircle}>
+                <FontAwesome name="bar-chart" size={20} color={colors.primaryDark} />
+              </View>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -592,7 +594,9 @@ export default function TodayScreen() {
                 <Text style={styles.aiButtonTitle}>Recomendacion IA</Text>
                 <Text style={styles.aiButtonSubtitle}>Segun lo que llevas hoy</Text>
               </View>
-              <FontAwesome name="magic" size={22} color={colors.textWhite} />
+              <View style={styles.aiIconCircle}>
+                <FontAwesome name="magic" size={20} color={colors.primaryDark} />
+              </View>
             </TouchableOpacity>
 
             <Button
@@ -1266,7 +1270,9 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     marginTop: 4,
   },
   aiButton: {
-    backgroundColor: colors.primaryDark,
+    backgroundColor: colors.backgroundCard,
+    borderWidth: 1.5,
+    borderColor: colors.border,
     borderRadius: 16,
     paddingVertical: 16,
     paddingHorizontal: 18,
@@ -1274,24 +1280,34 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  analysisButton: {
-    backgroundColor: colors.secondary,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
   },
   aiButtonTextGroup: {
     flex: 1,
   },
   aiButtonTitle: {
-    color: colors.textWhite,
+    color: colors.text,
     fontSize: 17,
     fontWeight: '800',
   },
   aiButtonSubtitle: {
-    color: colors.textWhite,
-    opacity: 0.85,
+    color: colors.textSecondary,
     fontSize: 13,
     fontWeight: '600',
     marginTop: 3,
+  },
+  aiIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 14,
   },
   modalOverlay: {
     flex: 1,

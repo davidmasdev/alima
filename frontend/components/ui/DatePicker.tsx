@@ -39,7 +39,7 @@ export function DatePicker({
   const formatDate = (date: Date): string => {
     return date.toLocaleDateString('es-ES', {
       day: '2-digit',
-      month: 'long',
+      month: '2-digit',
       year: 'numeric',
     });
   };
@@ -70,7 +70,8 @@ export function DatePicker({
               height: 56,
               padding: '0 16px',
               fontSize: 16,
-              fontFamily: 'inherit',
+              fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif',
+              fontWeight: 500,
               borderWidth: error ? 2 : 1.5,
               borderStyle: 'solid',
               borderColor: error ? colors.error : value ? colors.primary : colors.border,
@@ -326,13 +327,16 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: colors.overlayDark,
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
   },
   modalContent: {
     backgroundColor: colors.backgroundCard,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingBottom: 30,
+    borderRadius: 24,
+    paddingBottom: 24,
+    width: '100%',
+    maxWidth: 380,
     shadowColor: colors.shadowDark,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.2,
@@ -356,8 +360,10 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     padding: 8,
   },
   pickerContainer: {
-    paddingVertical: 20,
+    paddingVertical: 8,
     alignItems: 'center',
+    width: '100%',
+    overflow: 'hidden',
   },
   confirmButton: {
     backgroundColor: colors.primary,

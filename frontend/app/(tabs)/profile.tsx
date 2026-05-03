@@ -491,23 +491,24 @@ export default function ProfileScreen() {
             </Text>
 
             {[0, 1, 2].map((index) => (
-              <Input
-                key={index}
-                label={`Comida ${index + 1}`}
-                placeholder={index === 0 ? 'Desayuno' : index === 1 ? 'Comida' : 'Cena'}
-                value={mealTypeNames[index]}
-                onChangeText={(text) => {
-                  const nextNames = [...mealTypeNames];
-                  nextNames[index] = text;
-                  setMealTypeNames(nextNames);
-                  if (errors.form) setErrors({ ...errors, form: undefined });
-                }}
-              />
+              <View key={index} style={styles.mealTypeInput}>
+                <Input
+                  label={`Comida ${index + 1}`}
+                  placeholder={index === 0 ? 'Desayuno' : index === 1 ? 'Comida' : 'Cena'}
+                  value={mealTypeNames[index]}
+                  onChangeText={(text) => {
+                    const nextNames = [...mealTypeNames];
+                    nextNames[index] = text;
+                    setMealTypeNames(nextNames);
+                    if (errors.form) setErrors({ ...errors, form: undefined });
+                  }}
+                />
+              </View>
             ))}
 
             {errors.form && <Text style={styles.errorText}>{errors.form}</Text>}
 
-            <View style={styles.modalButtons}>
+            <View style={[styles.modalButtons, styles.mealTypeActions]}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={closeMealTypesEdit}
@@ -809,7 +810,7 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     textAlign: 'right',
   },
   buttonsContainer: {
-    gap: 12,
+    gap: 14,
   },
   editButton: {
     width: '100%',
@@ -819,11 +820,12 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   },
   deleteButton: {
     backgroundColor: colors.error,
-    paddingVertical: 16,
-    paddingHorizontal: 28,
+    minHeight: 58,
+    paddingVertical: 18,
+    paddingHorizontal: 32,
     borderRadius: 16,
     alignItems: 'center',
-    marginTop: 8,
+    justifyContent: 'center',
   },
   deleteButtonText: {
     color: colors.textWhite,
@@ -875,6 +877,13 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     textAlign: 'center',
     marginBottom: 24,
     lineHeight: 22,
+  },
+  mealTypeInput: {
+    width: '100%',
+    marginBottom: 16,
+  },
+  mealTypeActions: {
+    marginTop: 8,
   },
   modalButtons: {
     flexDirection: 'row',
