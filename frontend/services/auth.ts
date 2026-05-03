@@ -2,7 +2,14 @@ import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 import { apiRequest } from '@/services/api';
-import type { AuthResponse, LoginRequest, RegisterRequest, User } from '@/types/auth';
+import type {
+  AuthMessageResponse,
+  AuthResponse,
+  LoginRequest,
+  RegisterRequest,
+  ResendVerificationRequest,
+  User,
+} from '@/types/auth';
 
 const TOKEN_KEY = 'alima_access_token';
 const USER_KEY = 'alima_user';
@@ -81,13 +88,20 @@ export async function login(payload: LoginRequest): Promise<AuthResponse> {
   return authResponse;
 }
 
-export async function register(payload: RegisterRequest): Promise<AuthResponse> {
-  const authResponse = await apiRequest<AuthResponse>('/auth/register', {
+export async function register(payload: RegisterRequest): Promise<AuthMessageResponse> {
+  return apiRequest<AuthMessageResponse>('/auth/register', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
-  await saveSession(authResponse);
-  return authResponse;
+}
+
+export async function resendVerification(
+  payload: ResendVerificationRequest,
+): Promise<AuthMessageResponse> {
+  return apiRequest<AuthMessageResponse>('/auth/resend-verification', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 }
 
 export async function me(): Promise<User> {
@@ -122,7 +136,7 @@ export const authService = {
   login,
   me,
   register,
+  resendVerification,
   restoreSession,
   saveSession,
 };
-

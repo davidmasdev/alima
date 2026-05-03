@@ -72,7 +72,10 @@ export default function RegisterScreen() {
         email: email.trim(),
         password,
       });
-      router.push('/onboarding/step1');
+      router.push({
+        pathname: '/verify-email-sent',
+        params: { email: email.trim() },
+      });
     } catch (error) {
       if (error instanceof ApiError) {
         if (error.status === 409) {

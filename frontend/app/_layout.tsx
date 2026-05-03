@@ -3,6 +3,7 @@ import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Colors } from '@/constants/Colors';
 import { authService } from '@/services/auth';
+import { profileService } from '@/services/profile';
 
 export default function RootLayout() {
   useEffect(() => {
@@ -11,7 +12,18 @@ export default function RootLayout() {
     const restoreSession = async () => {
       const user = await authService.restoreSession();
       if (isMounted && user) {
-        router.replace('/(tabs)/today');
+        try {
+          const profile = await profileService.getProfile();
+          if (isMounted) {
+            router.replace(
+              profileService.isProfileComplete(profile)
+                ? '/(tabs)/today'
+                : '/onboarding/step1',
+            );
+          }
+        } catch {
+          await authService.clearSession();
+        }
       }
     };
 

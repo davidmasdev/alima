@@ -52,3 +52,8 @@ class Usuario(UUIDPrimaryKeyMixin, Base):
         back_populates="usuario",
         cascade="all, delete-orphan",
     )
+    email_verification_tokens: Mapped[list["EmailVerificationToken"]] = relationship(
+        "EmailVerificationToken",
+        back_populates="usuario",
+        cascade="all, delete-orphan",
+    )

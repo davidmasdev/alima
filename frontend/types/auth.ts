@@ -12,6 +12,11 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface AuthMessageResponse {
+  message: string;
+  user: User | null;
+}
+
 export interface LoginRequest {
   email: string;
   password: string;
@@ -24,3 +29,6 @@ export interface RegisterRequest {
   fecha_nacimiento?: string;
 }
 
+export interface ResendVerificationRequest {
+  email: string;
+}

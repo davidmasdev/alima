@@ -18,18 +18,22 @@ import { SocialButton } from '@/components/ui/SocialButton';
 import { Colors } from '@/constants/Colors';
 import { ApiError } from '@/services/api';
 import { authService } from '@/services/auth';
+import { profileService } from '@/services/profile';
 
 
 
 interface FormErrors {
   email?: string;
   password?: string;
+  form?: string;
 }
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
+  const [isResending, setIsResending] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const validateEmail = (email: string): boolean => {
@@ -60,17 +64,25 @@ export default function LoginScreen() {
     if (!validateForm()) return;
 
     setIsLoading(true);
+    setResendMessage(null);
 
     try {
       await authService.login({
         email: email.trim(),
         password,
       });
-      router.replace('/(tabs)/today');
+      const profile = await profileService.getProfile();
+      router.replace(
+        profileService.isProfileComplete(profile)
+          ? '/(tabs)/today'
+          : '/onboarding/step1',
+      );
     } catch (error) {
       if (error instanceof ApiError) {
         if (error.status === 401) {
           setErrors({ password: 'Credenciales incorrectas' });
+        } else if (error.status === 403) {
+          setErrors({ form: 'Valida tu correo antes de iniciar sesión' });
         } else {
           setErrors({ email: error.detail });
         }
@@ -79,6 +91,31 @@ export default function LoginScreen() {
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    const normalizedEmail = email.trim();
+
+    if (!normalizedEmail || !validateEmail(normalizedEmail)) {
+      setErrors({ email: 'Introduce un correo válido para reenviar la validación' });
+      return;
+    }
+
+    setIsResending(true);
+    setResendMessage(null);
+
+    try {
+      const response = await authService.resendVerification({ email: normalizedEmail });
+      setResendMessage(response.message);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setResendMessage(error.detail);
+      } else {
+        setResendMessage('No se pudo reenviar el correo de validación');
+      }
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -189,6 +226,21 @@ export default function LoginScreen() {
               size="large"
               style={styles.loginButton}
             />
+            {errors.form && (
+              <View style={styles.formMessageContainer}>
+                <Text style={styles.formErrorText}>{errors.form}</Text>
+                <Button
+                  title="Reenviar correo"
+                  onPress={handleResendVerification}
+                  loading={isResending}
+                  variant="secondary"
+                  size="medium"
+                />
+                {resendMessage && (
+                  <Text style={styles.resendMessageText}>{resendMessage}</Text>
+                )}
+              </View>
+            )}
           </View>
 
           <View style={styles.dividerContainer}>
@@ -302,6 +354,21 @@ const styles = StyleSheet.create({
   loginButton: {
     width: '100%',
     marginTop: 8,
+  },
+  formErrorText: {
+    color: Colors.error,
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  formMessageContainer: {
+    gap: 12,
+  },
+  resendMessageText: {
+    color: Colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   dividerContainer: {
     flexDirection: 'row',

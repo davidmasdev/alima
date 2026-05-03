@@ -60,6 +60,19 @@ export async function getProfile(): Promise<Profile> {
   return requestWithToken<Profile>('/profile');
 }
 
+export function isProfileComplete(profile: Profile): boolean {
+  return Boolean(
+    profile.nombre &&
+      profile.fecha_nacimiento &&
+      profile.sexo &&
+      profile.nivel_actividad &&
+      profile.objetivo &&
+      profile.peso !== null &&
+      profile.altura !== null &&
+      profile.calorias_diarias !== null,
+  );
+}
+
 export async function saveProfile(payload: ProfilePayload): Promise<Profile> {
   return requestWithToken<Profile>('/profile', {
     method: 'PUT',
@@ -99,7 +112,7 @@ export const profileService = {
   deleteAccount,
   getOnboardingDraft,
   getProfile,
+  isProfileComplete,
   saveOnboardingDraft,
   saveProfile,
 };
-

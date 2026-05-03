@@ -16,6 +16,10 @@ class UserLoginRequest(BaseModel):
     password: str = Field(min_length=1, max_length=128)
 
 
+class ResendVerificationRequest(BaseModel):
+    email: EmailStr
+
+
 class UserResponse(BaseModel):
     id: UUID
     email: EmailStr
@@ -31,3 +35,7 @@ class AuthTokenResponse(BaseModel):
     token_type: str = "bearer"
     user: UserResponse
 
+
+class AuthMessageResponse(BaseModel):
+    message: str
+    user: UserResponse | None = None

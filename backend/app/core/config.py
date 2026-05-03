@@ -19,6 +19,18 @@ class Settings(BaseSettings):
         default="http://localhost:8081,http://localhost:19006",
         alias="BACKEND_CORS_ORIGINS",
     )
+    backend_public_url: str = Field(default="http://localhost:8000", alias="BACKEND_PUBLIC_URL")
+    frontend_public_url: str = Field(default="http://localhost:8081", alias="FRONTEND_PUBLIC_URL")
+    email_verification_expire_hours: int = Field(
+        default=24,
+        alias="EMAIL_VERIFICATION_EXPIRE_HOURS",
+    )
+    smtp_host: str | None = Field(default=None, alias="SMTP_HOST")
+    smtp_port: int = Field(default=587, alias="SMTP_PORT")
+    smtp_username: str | None = Field(default=None, alias="SMTP_USERNAME")
+    smtp_password: str | None = Field(default=None, alias="SMTP_PASSWORD")
+    smtp_from_email: str | None = Field(default=None, alias="SMTP_FROM_EMAIL")
+    smtp_from_name: str = Field(default="Alima", alias="SMTP_FROM_NAME")
     ai_provider: str = Field(default="gemini", alias="AI_PROVIDER")
     gemini_api_key: str | None = Field(default=None, alias="GEMINI_API_KEY")
     gemini_model: str = Field(default="gemini-2.5-flash", alias="GEMINI_MODEL")

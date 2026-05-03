@@ -1,6 +1,7 @@
 from app.models.alimento import Alimento
 from app.models.analisis import Analisis
 from app.models.comida import Comida
+from app.models.email_verification_token import EmailVerificationToken
 from app.models.perfil_nutricional import PerfilNutricional
 from app.models.plantilla import Plantilla
 from app.models.recomendacion import Recomendacion
@@ -14,6 +15,7 @@ __all__ = [
     "Alimento",
     "Analisis",
     "Comida",
+    "EmailVerificationToken",
     "PerfilNutricional",
     "Plantilla",
     "Recomendacion",
