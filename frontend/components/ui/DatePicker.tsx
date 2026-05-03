@@ -67,6 +67,9 @@ export function DatePicker({
             min={minimumDate ? formatDateForInput(minimumDate) : undefined}
             style={{
               width: '100%',
+              maxWidth: '100%',
+              boxSizing: 'border-box',
+              display: 'block',
               height: 56,
               padding: '0 16px',
               fontSize: 16,
@@ -278,6 +281,8 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     width: '100%',
   },
   selectButton: {
+    width: '100%',
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

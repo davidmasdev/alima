@@ -409,14 +409,16 @@ export default function ProfileScreen() {
                 onPress={openEdit}
                 size="large"
                 style={styles.editButton}
+                textStyle={styles.profileActionText}
               />
 
               <Button
-                title="Cerrar Sesión"
+                title="Cerrar sesión"
                 onPress={handleLogout}
-                variant="secondary"
+                variant="outline"
                 size="large"
                 style={styles.logoutButton}
+                textStyle={styles.logoutButtonText}
               />
 
               <TouchableOpacity
@@ -817,6 +819,17 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   },
   logoutButton: {
     width: '100%',
+    backgroundColor: colors.backgroundCard,
+    borderColor: colors.error,
+  },
+  profileActionText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  logoutButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.error,
   },
   deleteButton: {
     backgroundColor: colors.error,
