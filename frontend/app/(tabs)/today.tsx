@@ -18,7 +18,8 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { NumberInput } from '@/components/ui/NumberInput';
 import { Select } from '@/components/ui/Select';
-import { Colors } from '@/constants/Colors';
+import type { AppColors } from '@/constants/Colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import { ApiError } from '@/services/api';
 import { analysisService } from '@/services/analysis';
 import { dailyLogService } from '@/services/dailyLog';
@@ -62,6 +63,8 @@ function round(value: number): number {
 }
 
 export default function TodayScreen() {
+  const { colors, effectiveTheme } = useAppTheme();
+  const styles = createStyles(colors);
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [dailyLog, setDailyLog] = useState<DailyLog | null>(null);
@@ -464,7 +467,7 @@ export default function TodayScreen() {
           accessibilityRole="button"
           accessibilityLabel={`Añadir alimento a ${meal.tipo}`}
         >
-          <FontAwesome name="plus" size={18} color={Colors.textWhite} />
+          <FontAwesome name="plus" size={18} color={colors.textWhite} />
         </TouchableOpacity>
       </View>
       {meal.entries.length > 0 ? (
@@ -489,9 +492,9 @@ export default function TodayScreen() {
                 accessibilityLabel={`Eliminar ${entry.alimento_nombre}`}
               >
                 {deletingEntryId === entry.id ? (
-                  <ActivityIndicator size="small" color={Colors.error} />
+                  <ActivityIndicator size="small" color={colors.error} />
                 ) : (
-                  <FontAwesome name="trash" size={14} color={Colors.error} />
+                  <FontAwesome name="trash" size={14} color={colors.error} />
                 )}
               </TouchableOpacity>
             </View>
@@ -505,7 +508,7 @@ export default function TodayScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle={effectiveTheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       <View style={styles.headerBackground} />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -518,7 +521,7 @@ export default function TodayScreen() {
 
         {isLoading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator color={Colors.primary} />
+            <ActivityIndicator color={colors.primary} />
           </View>
         ) : (
           <>
@@ -556,11 +559,11 @@ export default function TodayScreen() {
 
             <View style={styles.dateNavigator}>
               <TouchableOpacity onPress={() => setSelectedDate(addDays(selectedDate, -1))}>
-                <FontAwesome name="chevron-left" size={18} color={Colors.textSecondary} />
+                <FontAwesome name="chevron-left" size={18} color={colors.textSecondary} />
               </TouchableOpacity>
               <Text style={styles.dayText}>{formatDisplayDate(selectedDate)}</Text>
               <TouchableOpacity onPress={() => setSelectedDate(addDays(selectedDate, 1))}>
-                <FontAwesome name="chevron-right" size={18} color={Colors.textSecondary} />
+                <FontAwesome name="chevron-right" size={18} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
@@ -576,7 +579,7 @@ export default function TodayScreen() {
                 <Text style={styles.aiButtonTitle}>Analizar dieta</Text>
                 <Text style={styles.aiButtonSubtitle}>Ultimos 7 dias registrados</Text>
               </View>
-              <FontAwesome name="bar-chart" size={22} color={Colors.textWhite} />
+              <FontAwesome name="bar-chart" size={22} color={colors.textWhite} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -589,7 +592,7 @@ export default function TodayScreen() {
                 <Text style={styles.aiButtonTitle}>Recomendacion IA</Text>
                 <Text style={styles.aiButtonSubtitle}>Segun lo que llevas hoy</Text>
               </View>
-              <FontAwesome name="magic" size={22} color={Colors.textWhite} />
+              <FontAwesome name="magic" size={22} color={colors.textWhite} />
             </TouchableOpacity>
 
             <Button
@@ -724,7 +727,7 @@ export default function TodayScreen() {
 
               <View style={styles.resultsBox}>
                 {isSearching ? (
-                  <ActivityIndicator color={Colors.primary} />
+                  <ActivityIndicator color={colors.primary} />
                 ) : foods.length > 0 ? (
                   foods.map((food) => (
                     <TouchableOpacity
@@ -775,7 +778,7 @@ export default function TodayScreen() {
                 onPress={openTemplateModal}
               >
                 <Text style={styles.templateButtonText}>Anadir desde plantilla</Text>
-                <FontAwesome name="file-text-o" size={22} color={Colors.textSecondary} />
+                <FontAwesome name="file-text-o" size={22} color={colors.textSecondary} />
               </TouchableOpacity>
 
               {isCameraAvailable && (
@@ -784,7 +787,7 @@ export default function TodayScreen() {
                   onPress={() => setIsScannerVisible(true)}
                 >
                   <Text style={styles.qrButtonText}>Escanear QR</Text>
-                  <FontAwesome name="qrcode" size={22} color={Colors.textSecondary} />
+                  <FontAwesome name="qrcode" size={22} color={colors.textSecondary} />
                 </TouchableOpacity>
               )}
 
@@ -852,7 +855,7 @@ export default function TodayScreen() {
                 <View style={styles.recommendationCard}>
                   <View style={styles.recommendationHeader}>
                     <View style={styles.recommendationIcon}>
-                      <FontAwesome name="magic" size={18} color={Colors.textWhite} />
+                      <FontAwesome name="magic" size={18} color={colors.textWhite} />
                     </View>
                     <View style={styles.recommendationTitleGroup}>
                       <Text style={styles.recommendationTitle}>
@@ -957,7 +960,7 @@ export default function TodayScreen() {
 
             {isLoadingTemplates ? (
               <View style={styles.templateLoadingBox}>
-                <ActivityIndicator color={Colors.primary} />
+                <ActivityIndicator color={colors.primary} />
               </View>
             ) : templates.length > 0 ? (
               <ScrollView
@@ -979,7 +982,7 @@ export default function TodayScreen() {
                         {template.items.length} alimentos - {round(template.calorias)} Kcal
                       </Text>
                     </View>
-                    <FontAwesome name="chevron-right" size={16} color={Colors.textLight} />
+                    <FontAwesome name="chevron-right" size={16} color={colors.textLight} />
                   </TouchableOpacity>
                 ))}
 
@@ -995,7 +998,7 @@ export default function TodayScreen() {
               </ScrollView>
             ) : (
               <View style={styles.emptyTemplatePicker}>
-                <FontAwesome name="folder-open" size={48} color={Colors.border} />
+                <FontAwesome name="folder-open" size={48} color={colors.border} />
                 <Text style={styles.emptyTemplateTitle}>No hay plantillas</Text>
                 <Text style={styles.emptyTemplateText}>
                   Crea una plantilla para anadir comidas completas desde aqui
@@ -1054,10 +1057,10 @@ export default function TodayScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   headerBackground: {
     position: 'absolute',
@@ -1065,7 +1068,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 200,
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -1080,33 +1083,33 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 32,
     fontWeight: '800',
-    color: Colors.text,
+    color: colors.text,
     marginBottom: 8,
   },
   date: {
     fontSize: 16,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   loadingContainer: {
     paddingVertical: 60,
   },
   errorText: {
-    color: Colors.error,
+    color: colors.error,
     fontSize: 13,
     fontWeight: '600',
     textAlign: 'center',
     marginVertical: 8,
   },
   summaryCard: {
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.backgroundCard,
     borderRadius: 20,
     padding: 24,
     marginBottom: 24,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 24,
-    shadowColor: Colors.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -1117,19 +1120,19 @@ const styles = StyleSheet.create({
     height: 105,
     borderRadius: 52,
     borderWidth: 5,
-    borderColor: Colors.primaryLight,
-    borderLeftColor: Colors.textSecondary,
+    borderColor: colors.primaryLight,
+    borderLeftColor: colors.textSecondary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   calorieValue: {
     fontSize: 22,
-    color: Colors.text,
+    color: colors.text,
     fontWeight: '800',
   },
   calorieGoal: {
     fontSize: 18,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: '700',
   },
   macroList: {
@@ -1141,28 +1144,28 @@ const styles = StyleSheet.create({
   },
   macroLabel: {
     fontSize: 12,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: '600',
   },
   macroBarTrack: {
     height: 8,
-    backgroundColor: Colors.borderLight,
+    backgroundColor: colors.borderLight,
     borderRadius: 4,
     overflow: 'hidden',
   },
   macroBarFill: {
     height: '100%',
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: colors.primaryLight,
   },
   proteinFill: {
-    backgroundColor: Colors.secondaryLight,
+    backgroundColor: colors.secondaryLight,
   },
   fatFill: {
-    backgroundColor: Colors.textSecondary,
+    backgroundColor: colors.textSecondary,
   },
   macroValue: {
     fontSize: 12,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   dateNavigator: {
@@ -1173,23 +1176,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   dayText: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 16,
     fontWeight: '700',
   },
   mealSection: {
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.backgroundCard,
     borderRadius: 16,
     marginBottom: 18,
     overflow: 'hidden',
-    shadowColor: Colors.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
     elevation: 2,
   },
   mealHeader: {
-    backgroundColor: Colors.primaryMuted,
+    backgroundColor: colors.primaryMuted,
     paddingVertical: 14,
     paddingHorizontal: 18,
     flexDirection: 'row',
@@ -1197,7 +1200,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   mealTitle: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 17,
     fontWeight: '700',
   },
@@ -1205,7 +1208,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: Colors.primaryDark,
+    backgroundColor: colors.primaryDark,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1213,7 +1216,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   mealTotal: {
-    color: Colors.text,
+    color: colors.text,
     fontSize: 16,
     fontWeight: '800',
     textAlign: 'center',
@@ -1230,7 +1233,7 @@ const styles = StyleSheet.create({
   },
   tableCell: {
     flex: 1,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 12,
     fontWeight: '600',
     textAlign: 'center',
@@ -1246,13 +1249,13 @@ const styles = StyleSheet.create({
     width: 34,
     height: 30,
     borderRadius: 15,
-    backgroundColor: Colors.errorLight,
+    backgroundColor: colors.errorLight,
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 6,
   },
   emptyMealText: {
-    color: Colors.textLight,
+    color: colors.textLight,
     fontSize: 14,
     fontWeight: '600',
     padding: 18,
@@ -1263,7 +1266,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   aiButton: {
-    backgroundColor: Colors.primaryDark,
+    backgroundColor: colors.primaryDark,
     borderRadius: 16,
     paddingVertical: 16,
     paddingHorizontal: 18,
@@ -1273,18 +1276,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   analysisButton: {
-    backgroundColor: Colors.secondary,
+    backgroundColor: colors.secondary,
   },
   aiButtonTextGroup: {
     flex: 1,
   },
   aiButtonTitle: {
-    color: Colors.textWhite,
+    color: colors.textWhite,
     fontSize: 17,
     fontWeight: '800',
   },
   aiButtonSubtitle: {
-    color: Colors.textWhite,
+    color: colors.textWhite,
     opacity: 0.85,
     fontSize: 13,
     fontWeight: '600',
@@ -1292,13 +1295,13 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: Colors.overlayDark,
+    backgroundColor: colors.overlayDark,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   modalContent: {
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.backgroundCard,
     borderRadius: 24,
     padding: 24,
     width: '100%',
@@ -1306,7 +1309,7 @@ const styles = StyleSheet.create({
     maxHeight: '90%',
   },
   confirmModalContent: {
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.backgroundCard,
     borderRadius: 24,
     padding: 24,
     width: '100%',
@@ -1314,13 +1317,13 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   confirmTitle: {
-    color: Colors.text,
+    color: colors.text,
     fontSize: 22,
     fontWeight: '800',
     textAlign: 'center',
   },
   confirmText: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 15,
     fontWeight: '500',
     textAlign: 'center',
@@ -1329,7 +1332,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 28,
     fontWeight: '800',
-    color: Colors.text,
+    color: colors.text,
     marginBottom: 18,
     textAlign: 'center',
   },
@@ -1340,7 +1343,7 @@ const styles = StyleSheet.create({
   resultsBox: {
     minHeight: 120,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     borderRadius: 14,
     overflow: 'hidden',
     justifyContent: 'center',
@@ -1349,24 +1352,24 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
+    borderBottomColor: colors.borderLight,
   },
   foodResultSelected: {
-    backgroundColor: Colors.primaryMuted,
+    backgroundColor: colors.primaryMuted,
   },
   foodName: {
-    color: Colors.text,
+    color: colors.text,
     fontSize: 15,
     fontWeight: '700',
   },
   foodMeta: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 12,
     fontWeight: '500',
     marginTop: 2,
   },
   emptyResultsText: {
-    color: Colors.textLight,
+    color: colors.textLight,
     fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',
@@ -1376,16 +1379,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: Colors.borderLight,
+    borderColor: colors.borderLight,
     paddingVertical: 14,
   },
   energyLabel: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 15,
     fontWeight: '700',
   },
   energyValue: {
-    color: Colors.text,
+    color: colors.text,
     fontSize: 16,
     fontWeight: '800',
   },
@@ -1394,22 +1397,22 @@ const styles = StyleSheet.create({
   },
   analysisTable: {
     borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderColor: colors.borderLight,
     borderRadius: 10,
     overflow: 'hidden',
   },
   analysisRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
+    borderBottomColor: colors.borderLight,
   },
   analysisLabel: {
     flex: 1,
     paddingVertical: 13,
     paddingHorizontal: 10,
     borderRightWidth: 1,
-    borderRightColor: Colors.borderLight,
-    color: Colors.textSecondary,
+    borderRightColor: colors.borderLight,
+    color: colors.textSecondary,
     fontSize: 14,
     fontWeight: '600',
   },
@@ -1417,48 +1420,48 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 13,
     paddingHorizontal: 10,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 14,
     fontWeight: '700',
   },
   analysisAdvice: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 15,
     fontWeight: '600',
     lineHeight: 21,
     paddingHorizontal: 8,
   },
   analysisScore: {
-    color: Colors.primaryDark,
+    color: colors.primaryDark,
     fontSize: 18,
     fontWeight: '800',
     textAlign: 'center',
     textDecorationLine: 'underline',
   },
   analysisDays: {
-    color: Colors.textLight,
+    color: colors.textLight,
     fontSize: 12,
     fontWeight: '700',
     textAlign: 'center',
   },
   remainingBox: {
-    backgroundColor: Colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     borderRadius: 14,
     padding: 14,
   },
   remainingTitle: {
-    color: Colors.text,
+    color: colors.text,
     fontSize: 15,
     fontWeight: '800',
     marginBottom: 4,
   },
   remainingText: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 13,
     fontWeight: '600',
   },
   recommendationCard: {
-    backgroundColor: Colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     borderRadius: 14,
     padding: 16,
     gap: 12,
@@ -1472,7 +1475,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: Colors.primaryDark,
+    backgroundColor: colors.primaryDark,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1480,13 +1483,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   recommendationTitle: {
-    color: Colors.text,
+    color: colors.text,
     fontSize: 17,
     fontWeight: '800',
     marginBottom: 3,
   },
   recommendationTable: {
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.backgroundCard,
     borderRadius: 12,
     padding: 12,
   },
@@ -1496,27 +1499,27 @@ const styles = StyleSheet.create({
   },
   recommendationMacro: {
     flex: 1,
-    backgroundColor: Colors.primaryMuted,
+    backgroundColor: colors.primaryMuted,
     borderRadius: 10,
     paddingVertical: 8,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 12,
     fontWeight: '800',
     textAlign: 'center',
   },
   recommendationMeta: {
-    color: Colors.primaryDark,
+    color: colors.primaryDark,
     fontSize: 12,
     fontWeight: '800',
   },
   recommendationText: {
-    color: Colors.text,
+    color: colors.text,
     fontSize: 14,
     fontWeight: '500',
     lineHeight: 21,
   },
   qrButton: {
-    backgroundColor: Colors.primaryMuted,
+    backgroundColor: colors.primaryMuted,
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 18,
@@ -1525,12 +1528,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   qrButtonText: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 16,
     fontWeight: '800',
   },
   templateButton: {
-    backgroundColor: Colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 18,
@@ -1539,7 +1542,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   templateButtonText: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 16,
     fontWeight: '800',
   },
@@ -1552,7 +1555,7 @@ const styles = StyleSheet.create({
   },
   templatePickerItem: {
     borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderColor: colors.borderLight,
     borderRadius: 14,
     padding: 14,
     flexDirection: 'row',
@@ -1564,13 +1567,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   templatePickerName: {
-    color: Colors.text,
+    color: colors.text,
     fontSize: 16,
     fontWeight: '800',
     marginBottom: 4,
   },
   templatePickerMeta: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 13,
     fontWeight: '600',
   },
@@ -1579,12 +1582,12 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   emptyTemplateTitle: {
-    color: Colors.text,
+    color: colors.text,
     fontSize: 18,
     fontWeight: '800',
   },
   emptyTemplateText: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 14,
     fontWeight: '500',
     textAlign: 'center',

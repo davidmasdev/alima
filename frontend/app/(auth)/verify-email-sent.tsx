@@ -4,11 +4,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';
-import { Colors } from '@/constants/Colors';
+import type { AppColors } from '@/constants/Colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import { ApiError } from '@/services/api';
 import { authService } from '@/services/auth';
 
 export default function VerifyEmailSentScreen() {
+  const { colors, effectiveTheme } = useAppTheme();
+  const styles = createStyles(colors);
   const params = useLocalSearchParams<{ email?: string }>();
   const email = typeof params.email === 'string' ? params.email : '';
   const [message, setMessage] = useState<string | null>(null);
@@ -37,17 +40,17 @@ export default function VerifyEmailSentScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle={effectiveTheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       <View style={styles.content}>
         <View style={styles.iconCircle}>
-          <FontAwesome name="envelope-o" size={38} color={Colors.primaryDark} />
+          <FontAwesome name="envelope-o" size={38} color={colors.primaryDark} />
         </View>
         <Text style={styles.title}>Revisa tu correo</Text>
         <Text style={styles.text}>
           Hemos enviado un enlace de validacion a {email || 'tu correo'}. El enlace caduca en 24 horas.
         </Text>
 
-        {isResending && <ActivityIndicator color={Colors.primary} />}
+        {isResending && <ActivityIndicator color={colors.primary} />}
         {message && <Text style={styles.successText}>{message}</Text>}
         {error && <Text style={styles.errorText}>{error}</Text>}
 
@@ -71,10 +74,10 @@ export default function VerifyEmailSentScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   content: {
     flex: 1,
@@ -87,19 +90,19 @@ const styles = StyleSheet.create({
     width: 86,
     height: 86,
     borderRadius: 43,
-    backgroundColor: Colors.primaryMuted,
+    backgroundColor: colors.primaryMuted,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
   },
   title: {
-    color: Colors.text,
+    color: colors.text,
     fontSize: 30,
     fontWeight: '800',
     textAlign: 'center',
   },
   text: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 16,
     fontWeight: '500',
     lineHeight: 23,
@@ -107,13 +110,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   successText: {
-    color: Colors.success,
+    color: colors.success,
     fontSize: 13,
     fontWeight: '700',
     textAlign: 'center',
   },
   errorText: {
-    color: Colors.error,
+    color: colors.error,
     fontSize: 13,
     fontWeight: '700',
     textAlign: 'center',

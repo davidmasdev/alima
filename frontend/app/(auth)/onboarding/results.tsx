@@ -10,7 +10,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Button } from '@/components/ui/Button';
-import { Colors } from '@/constants/Colors';
+import type { AppColors } from '@/constants/Colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import { profileService } from '@/services/profile';
 import type { Profile } from '@/types/profile';
 
@@ -34,6 +35,8 @@ function formatNumber(value: number | null | undefined): string {
 }
 
 export default function OnboardingResultsScreen() {
+  const { colors, effectiveTheme } = useAppTheme();
+  const styles = createStyles(colors);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -75,7 +78,7 @@ export default function OnboardingResultsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle={effectiveTheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       <View style={styles.headerBackground} />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -85,7 +88,7 @@ export default function OnboardingResultsScreen() {
 
         {isLoading ? (
           <View style={styles.loadingBox}>
-            <ActivityIndicator color={Colors.primary} />
+            <ActivityIndicator color={colors.primary} />
           </View>
         ) : (
           <>
@@ -137,10 +140,10 @@ export default function OnboardingResultsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   headerBackground: {
     position: 'absolute',
@@ -148,7 +151,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 200,
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -158,7 +161,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    color: Colors.text,
+    color: colors.text,
     fontSize: 32,
     fontWeight: '800',
     marginBottom: 56,
@@ -167,7 +170,7 @@ const styles = StyleSheet.create({
     paddingVertical: 80,
   },
   errorText: {
-    color: Colors.error,
+    color: colors.error,
     fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',
@@ -176,7 +179,7 @@ const styles = StyleSheet.create({
   resultsTable: {
     width: '100%',
     borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderColor: colors.borderLight,
     borderRadius: 10,
     overflow: 'hidden',
     marginBottom: 48,
@@ -185,7 +188,7 @@ const styles = StyleSheet.create({
     minHeight: 48,
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
+    borderBottomColor: colors.borderLight,
   },
   lastResultRow: {
     borderBottomWidth: 0,
@@ -195,8 +198,8 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     paddingHorizontal: 12,
     borderRightWidth: 1,
-    borderRightColor: Colors.borderLight,
-    color: Colors.textSecondary,
+    borderRightColor: colors.borderLight,
+    color: colors.textSecondary,
     fontSize: 15,
     fontWeight: '600',
   },
@@ -204,21 +207,21 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 13,
     paddingHorizontal: 12,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 15,
     fontWeight: '700',
   },
   highlightText: {
-    color: Colors.primaryDark,
+    color: colors.primaryDark,
   },
   goalText: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 16,
     fontWeight: '700',
     marginBottom: 18,
   },
   caloriesText: {
-    color: Colors.primaryDark,
+    color: colors.primaryDark,
     fontSize: 17,
     fontWeight: '800',
     textAlign: 'center',

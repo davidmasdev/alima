@@ -5,11 +5,14 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Colors } from '@/constants/Colors';
+import type { AppColors } from '@/constants/Colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import { ApiError } from '@/services/api';
 import { authService } from '@/services/auth';
 
 export default function VerifyEmailScreen() {
+  const { colors, effectiveTheme } = useAppTheme();
+  const styles = createStyles(colors);
   const params = useLocalSearchParams<{ status?: string }>();
   const status = typeof params.status === 'string' ? params.status : 'invalid';
   const [email, setEmail] = useState('');
@@ -66,10 +69,10 @@ export default function VerifyEmailScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle={effectiveTheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       <View style={styles.content}>
         <View style={styles.iconCircle}>
-          <FontAwesome name={content.icon} size={42} color={Colors.primaryDark} />
+          <FontAwesome name={content.icon} size={42} color={colors.primaryDark} />
         </View>
         <Text style={styles.title}>{content.title}</Text>
         <Text style={styles.text}>{content.text}</Text>
@@ -109,10 +112,10 @@ export default function VerifyEmailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   content: {
     flex: 1,
@@ -125,19 +128,19 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: Colors.primaryMuted,
+    backgroundColor: colors.primaryMuted,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
   },
   title: {
-    color: Colors.text,
+    color: colors.text,
     fontSize: 30,
     fontWeight: '800',
     textAlign: 'center',
   },
   text: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 16,
     fontWeight: '500',
     lineHeight: 23,
@@ -149,7 +152,7 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   successText: {
-    color: Colors.success,
+    color: colors.success,
     fontSize: 13,
     fontWeight: '700',
     textAlign: 'center',

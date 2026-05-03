@@ -8,7 +8,8 @@ import {
   TextStyle,
   View 
 } from 'react-native';
-import { Colors } from '@/constants/Colors';
+import type { AppColors } from '@/constants/Colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 interface ButtonProps {
   title: string;
@@ -33,6 +34,8 @@ export function Button({
   textStyle,
   icon,
 }: ButtonProps) {
+  const { colors } = useAppTheme();
+  const styles = createStyles(colors);
   const getSizeStyle = () => {
     switch (size) {
       case 'small':
@@ -74,7 +77,7 @@ export function Button({
           ]}
         >
           {loading ? (
-            <ActivityIndicator color={Colors.textWhite} />
+            <ActivityIndicator color={colors.textWhite} />
           ) : (
             <View style={styles.contentContainer}>
               {icon}
@@ -132,7 +135,7 @@ export function Button({
     >
       {loading ? (
         <ActivityIndicator 
-          color={variant === 'outline' || variant === 'ghost' ? Colors.primary : Colors.textWhite} 
+          color={variant === 'outline' || variant === 'ghost' ? colors.primary : colors.textWhite}
         />
       ) : (
         <View style={styles.contentContainer}>
@@ -146,10 +149,10 @@ export function Button({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   buttonContainer: {
     borderRadius: 16,
-    shadowColor: Colors.primary,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -178,18 +181,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   primaryButton: {
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
   secondaryButton: {
-    backgroundColor: Colors.secondary,
+    backgroundColor: colors.secondary,
   },
   outlineButton: {
     backgroundColor: 'transparent',
     borderWidth: 2,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
   ghostButton: {
     backgroundColor: 'transparent',
@@ -198,22 +201,22 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   buttonText: {
-    color: Colors.textWhite,
+    color: colors.textWhite,
     fontWeight: '700',
     letterSpacing: 0.3,
   },
   secondaryText: {
-    color: Colors.textWhite,
+    color: colors.textWhite,
     fontWeight: '700',
     letterSpacing: 0.3,
   },
   outlineText: {
-    color: Colors.text,
+    color: colors.text,
     fontWeight: '600',
     letterSpacing: 0.3,
   },
   ghostText: {
-    color: Colors.primary,
+    color: colors.primary,
     fontWeight: '600',
     letterSpacing: 0.3,
   },

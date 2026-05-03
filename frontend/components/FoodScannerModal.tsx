@@ -15,7 +15,8 @@ import {
 } from 'expo-camera';
 import { FontAwesome } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';
-import { Colors } from '@/constants/Colors';
+import type { AppColors } from '@/constants/Colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import { ApiError } from '@/services/api';
 import { dailyLogService } from '@/services/dailyLog';
 import type { Food } from '@/types/dailyLog';
@@ -33,6 +34,8 @@ export function FoodScannerModal({
   onClose,
   onFoodScanned,
 }: FoodScannerModalProps) {
+  const { colors } = useAppTheme();
+  const styles = createStyles(colors);
   const [permission, requestPermission] = useCameraPermissions();
   const [isResolving, setIsResolving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -81,17 +84,17 @@ export function FoodScannerModal({
               accessibilityRole="button"
               accessibilityLabel="Cerrar escáner"
             >
-              <FontAwesome name="times" size={18} color={Colors.text} />
+              <FontAwesome name="times" size={18} color={colors.text} />
             </TouchableOpacity>
           </View>
 
           {!permission ? (
             <View style={styles.messageBox}>
-              <ActivityIndicator color={Colors.primary} />
+              <ActivityIndicator color={colors.primary} />
             </View>
           ) : !canUseCamera ? (
             <View style={styles.messageBox}>
-              <FontAwesome name="camera" size={34} color={Colors.textSecondary} />
+              <FontAwesome name="camera" size={34} color={colors.textSecondary} />
               <Text style={styles.messageText}>
                 Necesitamos acceso a la cámara para escanear códigos.
               </Text>
@@ -115,7 +118,7 @@ export function FoodScannerModal({
 
           {isResolving && (
             <View style={styles.statusRow}>
-              <ActivityIndicator color={Colors.primary} />
+              <ActivityIndicator color={colors.primary} />
               <Text style={styles.statusText}>Buscando alimento...</Text>
             </View>
           )}
@@ -134,15 +137,15 @@ export function FoodScannerModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: Colors.overlayDark,
+    backgroundColor: colors.overlayDark,
     justifyContent: 'center',
     paddingHorizontal: 20,
   },
   content: {
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.backgroundCard,
     borderRadius: 20,
     padding: 18,
     gap: 16,
@@ -153,7 +156,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   title: {
-    color: Colors.text,
+    color: colors.text,
     fontSize: 24,
     fontWeight: '800',
   },
@@ -161,7 +164,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: Colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -169,7 +172,7 @@ const styles = StyleSheet.create({
     height: 340,
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: Colors.text,
+    backgroundColor: colors.text,
   },
   camera: {
     flex: 1,
@@ -181,7 +184,7 @@ const styles = StyleSheet.create({
     top: '26%',
     bottom: '26%',
     borderWidth: 3,
-    borderColor: Colors.primary,
+    borderColor: colors.primary,
     borderRadius: 18,
   },
   hintBar: {
@@ -193,7 +196,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.55)',
   },
   hintText: {
-    color: Colors.textWhite,
+    color: colors.textWhite,
     fontSize: 14,
     fontWeight: '700',
     textAlign: 'center',
@@ -205,7 +208,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   messageText: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 15,
     fontWeight: '600',
     lineHeight: 21,
@@ -218,12 +221,12 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   statusText: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 14,
     fontWeight: '700',
   },
   errorText: {
-    color: Colors.error,
+    color: colors.error,
     fontSize: 13,
     fontWeight: '700',
     textAlign: 'center',

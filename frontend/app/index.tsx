@@ -8,10 +8,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Button } from '@/components/ui/Button';
-import { Colors } from '@/constants/Colors';
+import type { AppColors } from '@/constants/Colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import LogoSVG from '@/components/ui/LogoSVG';
 
 export default function WelcomeScreen() {
+  const { colors, effectiveTheme } = useAppTheme();
+  const styles = createStyles(colors);
   const handleLogin = () => {
     router.push('/login');
   };
@@ -22,7 +25,7 @@ export default function WelcomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle={effectiveTheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       
       <View style={styles.content}>
         <View style={styles.logoSection}>
@@ -62,10 +65,10 @@ export default function WelcomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   content: {
     flex: 1,
@@ -82,7 +85,7 @@ const styles = StyleSheet.create({
   appName: {
     fontSize: 36,
     fontWeight: '800',
-    color: Colors.text,
+    color: colors.text,
     letterSpacing: -0.5,
   },
   buttonContainer: {
@@ -101,12 +104,12 @@ const styles = StyleSheet.create({
   },
   registerText: {
     fontSize: 15,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   registerLink: {
     fontSize: 15,
-    color: Colors.primaryDark,
+    color: colors.primaryDark,
     fontWeight: '700',
   },
   footer: {
@@ -116,7 +119,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 12,
-    color: Colors.textLight,
+    color: colors.textLight,
   },
   termsContainer: {
     flexDirection: 'row',
@@ -124,7 +127,7 @@ const styles = StyleSheet.create({
   },
   termsLink: {
     fontSize: 12,
-    color: Colors.primaryDark,
+    color: colors.primaryDark,
     fontWeight: '600',
   },
 });

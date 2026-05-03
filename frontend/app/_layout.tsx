@@ -1,11 +1,13 @@
 import { useEffect } from 'react';
 import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Colors } from '@/constants/Colors';
+import { ThemeProvider, useAppTheme } from '@/contexts/ThemeContext';
 import { authService } from '@/services/auth';
 import { profileService } from '@/services/profile';
 
-export default function RootLayout() {
+function RootNavigator() {
+  const { colors, effectiveTheme } = useAppTheme();
+
   useEffect(() => {
     let isMounted = true;
 
@@ -36,11 +38,11 @@ export default function RootLayout() {
 
   return (
     <>
-      <StatusBar style="dark" />
+      <StatusBar style={effectiveTheme === 'dark' ? 'light' : 'dark'} />
       <Stack
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: Colors.background },
+          contentStyle: { backgroundColor: colors.background },
         }}
       >
         <Stack.Screen name="index" />
@@ -48,5 +50,13 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" />
       </Stack>
     </>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <RootNavigator />
+    </ThemeProvider>
   );
 }

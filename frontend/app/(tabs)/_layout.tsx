@@ -1,22 +1,24 @@
 import { Tabs } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
-import { Colors } from '@/constants/Colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 export default function TabsLayout() {
+  const { colors } = useAppTheme();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: Colors.backgroundCard,
+          backgroundColor: colors.backgroundCard,
           borderTopWidth: 1,
-          borderTopColor: Colors.border,
+          borderTopColor: colors.border,
           height: 65,
           paddingBottom: 8,
           paddingTop: 5,
         },
-        tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.textLight,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textLight,
         tabBarLabelStyle: {
           fontSize: 10,
           fontWeight: '600',

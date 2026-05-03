@@ -6,7 +6,8 @@ import {
   StyleSheet,
   Animated,
 } from 'react-native';
-import { Colors } from '@/constants/Colors';
+import type { AppColors } from '@/constants/Colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 interface NumberInputProps {
   label: string;
@@ -29,6 +30,8 @@ export function NumberInput({
   error,
   keyboardType = 'numeric',
 }: NumberInputProps) {
+  const { colors } = useAppTheme();
+  const styles = createStyles(colors);
   const [isFocused, setIsFocused] = useState(false);
   const [scaleAnim] = useState(new Animated.Value(1));
 
@@ -71,7 +74,7 @@ export function NumberInput({
           <TextInput
             style={styles.input}
             placeholder={placeholder}
-            placeholderTextColor={Colors.placeholder}
+            placeholderTextColor={colors.placeholder}
             value={value}
             onChangeText={onChangeText}
             onFocus={handleFocus}
@@ -93,14 +96,14 @@ export function NumberInput({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     width: '100%',
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: Colors.text,
+    color: colors.text,
     marginBottom: 8,
     marginLeft: 4,
   },
@@ -111,39 +114,39 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     borderRadius: 16,
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.backgroundCard,
     paddingLeft: 16,
     height: 56,
-    shadowColor: Colors.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
   inputContainerFocused: {
-    borderColor: Colors.primary,
+    borderColor: colors.primary,
     borderWidth: 2,
-    shadowColor: Colors.primary,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 4,
   },
   inputContainerError: {
-    borderColor: Colors.error,
-    backgroundColor: Colors.errorLight,
+    borderColor: colors.error,
+    backgroundColor: colors.errorLight,
   },
   input: {
     flex: 1,
     fontSize: 16,
-    color: Colors.text,
+    color: colors.text,
     height: '100%',
     fontWeight: '500',
   },
   unitContainer: {
-    backgroundColor: Colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     paddingHorizontal: 16,
     paddingVertical: 8,
     marginRight: 8,
@@ -154,14 +157,14 @@ const styles = StyleSheet.create({
   unitText: {
     fontSize: 14,
     fontWeight: '600',
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
   },
   errorContainer: {
     marginTop: 6,
     marginLeft: 4,
   },
   errorText: {
-    color: Colors.error,
+    color: colors.error,
     fontSize: 13,
     fontWeight: '500',
   },

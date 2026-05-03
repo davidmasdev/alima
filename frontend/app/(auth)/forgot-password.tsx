@@ -14,11 +14,14 @@ import { router } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Colors } from '@/constants/Colors';
+import type { AppColors } from '@/constants/Colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import { ApiError } from '@/services/api';
 import { authService } from '@/services/auth';
 
 export default function ForgotPasswordScreen() {
+  const { colors, effectiveTheme } = useAppTheme();
+  const styles = createStyles(colors);
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -59,7 +62,7 @@ export default function ForgotPasswordScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle={effectiveTheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -75,12 +78,12 @@ export default function ForgotPasswordScreen() {
             accessibilityRole="button"
             accessibilityLabel="Volver"
           >
-            <FontAwesome name="arrow-left" size={18} color={Colors.text} />
+            <FontAwesome name="arrow-left" size={18} color={colors.text} />
           </TouchableOpacity>
 
           <View style={styles.content}>
             <View style={styles.iconCircle}>
-              <FontAwesome name="key" size={36} color={Colors.primaryDark} />
+              <FontAwesome name="key" size={36} color={colors.primaryDark} />
             </View>
             <Text style={styles.title}>Recuperar contraseña</Text>
             <Text style={styles.subtitle}>
@@ -124,10 +127,10 @@ export default function ForgotPasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   keyboardView: {
     flex: 1,
@@ -142,10 +145,10 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.backgroundCard,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: Colors.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -161,18 +164,18 @@ const styles = StyleSheet.create({
     width: 86,
     height: 86,
     borderRadius: 43,
-    backgroundColor: Colors.primaryMuted,
+    backgroundColor: colors.primaryMuted,
     justifyContent: 'center',
     alignItems: 'center',
   },
   title: {
-    color: Colors.text,
+    color: colors.text,
     fontSize: 30,
     fontWeight: '800',
     textAlign: 'center',
   },
   subtitle: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 16,
     fontWeight: '500',
     lineHeight: 23,
@@ -180,7 +183,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   successText: {
-    color: Colors.success,
+    color: colors.success,
     fontSize: 13,
     fontWeight: '700',
     textAlign: 'center',

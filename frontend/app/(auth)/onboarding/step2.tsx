@@ -15,7 +15,8 @@ import { FontAwesome } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { NumberInput } from '@/components/ui/NumberInput';
-import { Colors } from '@/constants/Colors';
+import type { AppColors } from '@/constants/Colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import { ApiError } from '@/services/api';
 import { profileService } from '@/services/profile';
 
@@ -64,6 +65,8 @@ const goalOptions = [
 const resultsRoute = '/(auth)/onboarding/results' as Href;
 
 export default function OnboardingStep2Screen() {
+  const { colors, effectiveTheme } = useAppTheme();
+  const styles = createStyles(colors);
   const [activity, setActivity] = useState('');
   const [goal, setGoal] = useState('');
   const [weight, setWeight] = useState('');
@@ -138,7 +141,7 @@ export default function OnboardingStep2Screen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle={effectiveTheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       
       <View style={styles.headerBackground} />
       
@@ -159,7 +162,7 @@ export default function OnboardingStep2Screen() {
               accessibilityLabel="Volver"
             >
               <View style={styles.backButtonCircle}>
-                <FontAwesome name="arrow-left" size={18} color={Colors.text} />
+                <FontAwesome name="arrow-left" size={18} color={colors.text} />
               </View>
             </TouchableOpacity>
           </View>
@@ -255,10 +258,10 @@ export default function OnboardingStep2Screen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   headerBackground: {
     position: 'absolute',
@@ -266,7 +269,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 200,
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.background,
   },
   keyboardView: {
     flex: 1,
@@ -287,10 +290,10 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.backgroundCard,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: Colors.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -302,13 +305,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '800',
-    color: Colors.text,
+    color: colors.text,
     marginBottom: 8,
     letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 16,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   progressContainer: {
@@ -316,13 +319,13 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: 6,
-    backgroundColor: Colors.borderLight,
+    backgroundColor: colors.borderLight,
     borderRadius: 3,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: 3,
   },
   formContainer: {
@@ -337,7 +340,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   formErrorText: {
-    color: Colors.error,
+    color: colors.error,
     fontSize: 13,
     fontWeight: '500',
     marginBottom: 12,

@@ -9,7 +9,8 @@ import {
   Animated,
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import { Colors } from '@/constants/Colors';
+import type { AppColors } from '@/constants/Colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 interface SelectOption {
   value: string;
@@ -34,6 +35,8 @@ export function Select({
   label,
   error,
 }: SelectProps) {
+  const { colors } = useAppTheme();
+  const styles = createStyles(colors);
   const [isVisible, setIsVisible] = useState(false);
   const [scaleAnim] = useState(new Animated.Value(1));
 
@@ -97,7 +100,7 @@ export function Select({
           <FontAwesome
             name="chevron-right"
             size={16}
-            color={Colors.textLight}
+            color={colors.textLight}
             style={styles.chevron}
           />
         </TouchableOpacity>
@@ -105,7 +108,7 @@ export function Select({
 
       {error && (
         <View style={styles.errorContainer}>
-          <FontAwesome name="exclamation-circle" size={12} color={Colors.error} />
+          <FontAwesome name="exclamation-circle" size={12} color={colors.error} />
           <Text style={styles.errorText}>{error}</Text>
         </View>
       )}
@@ -126,7 +129,7 @@ export function Select({
                 accessibilityRole="button"
                 accessibilityLabel="Cerrar selector"
               >
-                <FontAwesome name="times" size={20} color={Colors.text} />
+                <FontAwesome name="times" size={20} color={colors.text} />
               </TouchableOpacity>
             </View>
 
@@ -162,7 +165,7 @@ export function Select({
                     <FontAwesome
                       name="check"
                       size={18}
-                      color={Colors.primary}
+                      color={colors.primary}
                     />
                   )}
                 </TouchableOpacity>
@@ -175,14 +178,14 @@ export function Select({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     width: '100%',
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: Colors.text,
+    color: colors.text,
     marginBottom: 8,
     marginLeft: 4,
   },
@@ -191,32 +194,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1.5,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     borderRadius: 16,
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.backgroundCard,
     paddingHorizontal: 16,
     height: 56,
-    shadowColor: Colors.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
   selectButtonFilled: {
-    borderColor: Colors.primary,
+    borderColor: colors.primary,
     borderWidth: 2,
   },
   selectButtonError: {
-    borderColor: Colors.error,
-    backgroundColor: Colors.errorLight,
+    borderColor: colors.error,
+    backgroundColor: colors.errorLight,
   },
   selectText: {
     fontSize: 16,
-    color: Colors.text,
+    color: colors.text,
     fontWeight: '500',
   },
   placeholderText: {
-    color: Colors.placeholder,
+    color: colors.placeholder,
   },
   chevron: {
     marginLeft: 8,
@@ -229,21 +232,21 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   errorText: {
-    color: Colors.error,
+    color: colors.error,
     fontSize: 13,
     fontWeight: '500',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: Colors.overlayDark,
+    backgroundColor: colors.overlayDark,
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.backgroundCard,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '80%',
-    shadowColor: Colors.shadowDark,
+    shadowColor: colors.shadowDark,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
@@ -255,12 +258,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: colors.border,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: Colors.text,
+    color: colors.text,
   },
   closeButton: {
     padding: 8,
@@ -274,13 +277,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
+    borderBottomColor: colors.borderLight,
   },
   optionItemLast: {
     borderBottomWidth: 0,
   },
   optionItemSelected: {
-    backgroundColor: Colors.primaryMuted,
+    backgroundColor: colors.primaryMuted,
     marginHorizontal: -20,
     paddingHorizontal: 20,
     borderBottomWidth: 0,
@@ -292,14 +295,14 @@ const styles = StyleSheet.create({
   optionLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.text,
+    color: colors.text,
     marginBottom: 4,
   },
   optionLabelSelected: {
-    color: Colors.primaryDark,
+    color: colors.primaryDark,
   },
   optionDescription: {
     fontSize: 13,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
   },
 });

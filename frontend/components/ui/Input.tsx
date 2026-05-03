@@ -9,7 +9,8 @@ import {
   Animated,
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import { Colors } from '@/constants/Colors';
+import type { AppColors } from '@/constants/Colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 interface InputProps {
   placeholder: string;
@@ -38,6 +39,8 @@ export function Input({
   icon,
   label,
 }: InputProps) {
+  const { colors } = useAppTheme();
+  const styles = createStyles(colors);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [scaleAnim] = useState(new Animated.Value(1));
@@ -85,14 +88,14 @@ export function Input({
             <FontAwesome
               name={icon as any}
               size={18}
-              color={isFocused ? Colors.primary : Colors.textLight}
+              color={isFocused ? colors.primary : colors.textLight}
               style={styles.icon}
             />
           )}
           <TextInput
             style={styles.input}
             placeholder={placeholder}
-            placeholderTextColor={Colors.placeholder}
+            placeholderTextColor={colors.placeholder}
             value={value}
             onChangeText={onChangeText}
             onFocus={handleFocus}
@@ -112,7 +115,7 @@ export function Input({
               <FontAwesome
                 name={isPasswordVisible ? 'eye-slash' : 'eye'}
                 size={18}
-                color={Colors.textLight}
+                color={colors.textLight}
               />
             </TouchableOpacity>
           )}
@@ -120,7 +123,7 @@ export function Input({
       </Animated.View>
       {error && (
         <View style={styles.errorContainer}>
-          <FontAwesome name="exclamation-circle" size={12} color={Colors.error} />
+          <FontAwesome name="exclamation-circle" size={12} color={colors.error} />
           <Text style={styles.errorText}>{error}</Text>
         </View>
       )}
@@ -128,14 +131,14 @@ export function Input({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     width: '100%',
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: Colors.text,
+    color: colors.text,
     marginBottom: 8,
     marginLeft: 4,
   },
@@ -146,29 +149,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     borderRadius: 16,
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.backgroundCard,
     paddingHorizontal: 16,
     height: 56,
-    shadowColor: Colors.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
   inputContainerFocused: {
-    borderColor: Colors.primary,
+    borderColor: colors.primary,
     borderWidth: 2,
-    shadowColor: Colors.primary,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 4,
   },
   inputContainerError: {
-    borderColor: Colors.error,
-    backgroundColor: Colors.errorLight,
+    borderColor: colors.error,
+    backgroundColor: colors.errorLight,
   },
   icon: {
     marginRight: 12,
@@ -176,7 +179,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
-    color: Colors.text,
+    color: colors.text,
     height: '100%',
     fontWeight: '500',
   },
@@ -192,7 +195,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   errorText: {
-    color: Colors.error,
+    color: colors.error,
     fontSize: 13,
     fontWeight: '500',
   },

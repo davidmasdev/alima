@@ -14,7 +14,8 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { DatePicker } from '@/components/ui/DatePicker';
-import { Colors } from '@/constants/Colors';
+import type { AppColors } from '@/constants/Colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import { profileService } from '@/services/profile';
 
 interface FormErrors {
@@ -31,6 +32,8 @@ const genderOptions = [
 ];
 
 export default function OnboardingStep1Screen() {
+  const { colors, effectiveTheme } = useAppTheme();
+  const styles = createStyles(colors);
   const [name, setName] = useState('');
   const [gender, setGender] = useState('');
   const [birthDate, setBirthDate] = useState<Date | null>(null);
@@ -80,7 +83,7 @@ export default function OnboardingStep1Screen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle={effectiveTheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       
       <View style={styles.headerBackground} />
       
@@ -166,10 +169,10 @@ export default function OnboardingStep1Screen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   headerBackground: {
     position: 'absolute',
@@ -177,7 +180,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 200,
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.background,
   },
   keyboardView: {
     flex: 1,
@@ -194,13 +197,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '800',
-    color: Colors.text,
+    color: colors.text,
     marginBottom: 8,
     letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 16,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   progressContainer: {
@@ -208,13 +211,13 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: 6,
-    backgroundColor: Colors.borderLight,
+    backgroundColor: colors.borderLight,
     borderRadius: 3,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: 3,
   },
   formContainer: {

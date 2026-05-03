@@ -18,7 +18,8 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { NumberInput } from '@/components/ui/NumberInput';
 import { Select } from '@/components/ui/Select';
-import { Colors } from '@/constants/Colors';
+import type { AppColors } from '@/constants/Colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import { ApiError } from '@/services/api';
 import { dailyLogService } from '@/services/dailyLog';
 import { templatesService } from '@/services/templates';
@@ -40,6 +41,8 @@ function round(value: number): number {
 }
 
 export default function TemplatesScreen() {
+  const { colors, effectiveTheme } = useAppTheme();
+  const styles = createStyles(colors);
   const [templates, setTemplates] = useState<MealTemplate[]>([]);
   const [foods, setFoods] = useState<Food[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<MealTemplate | null>(null);
@@ -280,7 +283,7 @@ export default function TemplatesScreen() {
             accessibilityRole="button"
             accessibilityLabel={`Editar ${template.nombre}`}
           >
-            <FontAwesome name="pencil" size={16} color={Colors.textSecondary} />
+            <FontAwesome name="pencil" size={16} color={colors.textSecondary} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.iconButton}
@@ -288,7 +291,7 @@ export default function TemplatesScreen() {
             accessibilityRole="button"
             accessibilityLabel={`Eliminar ${template.nombre}`}
           >
-            <FontAwesome name="trash" size={16} color={Colors.error} />
+            <FontAwesome name="trash" size={16} color={colors.error} />
           </TouchableOpacity>
         </View>
       </View>
@@ -308,7 +311,7 @@ export default function TemplatesScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle={effectiveTheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
 
       <View style={styles.headerBackground} />
 
@@ -327,13 +330,13 @@ export default function TemplatesScreen() {
             accessibilityRole="button"
             accessibilityLabel="Nueva plantilla"
           >
-            <FontAwesome name="plus" size={18} color={Colors.textWhite} />
+            <FontAwesome name="plus" size={18} color={colors.textWhite} />
           </TouchableOpacity>
         </View>
 
         {isLoading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator color={Colors.primary} />
+            <ActivityIndicator color={colors.primary} />
           </View>
         ) : (
           <>
@@ -343,7 +346,7 @@ export default function TemplatesScreen() {
               <View style={styles.templateList}>{templates.map(renderTemplate)}</View>
             ) : (
               <View style={styles.emptyState}>
-                <FontAwesome name="folder-open" size={64} color={Colors.border} />
+                <FontAwesome name="folder-open" size={64} color={colors.border} />
                 <Text style={styles.emptyStateTitle}>No hay plantillas</Text>
                 <Text style={styles.emptyStateText}>
                   Crea una plantilla para anadir comidas completas desde Hoy
@@ -397,7 +400,7 @@ export default function TemplatesScreen() {
 
               <View style={styles.resultsBox}>
                 {isSearching ? (
-                  <ActivityIndicator color={Colors.primary} />
+                  <ActivityIndicator color={colors.primary} />
                 ) : foods.length > 0 ? (
                   foods.map((food) => (
                     <TouchableOpacity
@@ -449,7 +452,7 @@ export default function TemplatesScreen() {
                   onPress={() => setIsScannerVisible(true)}
                 >
                   <Text style={styles.qrButtonText}>Escanear QR</Text>
-                  <FontAwesome name="qrcode" size={22} color={Colors.textSecondary} />
+                  <FontAwesome name="qrcode" size={22} color={colors.textSecondary} />
                 </TouchableOpacity>
               )}
 
@@ -473,7 +476,7 @@ export default function TemplatesScreen() {
                         accessibilityRole="button"
                         accessibilityLabel={`Quitar ${item.alimento_nombre}`}
                       >
-                        <FontAwesome name="times" size={14} color={Colors.error} />
+                        <FontAwesome name="times" size={14} color={colors.error} />
                       </TouchableOpacity>
                     </View>
                   ))
@@ -512,10 +515,10 @@ export default function TemplatesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   headerBackground: {
     position: 'absolute',
@@ -523,7 +526,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 200,
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -541,19 +544,19 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '800',
-    color: Colors.text,
+    color: colors.text,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   addTemplateButton: {
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -561,7 +564,7 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   errorText: {
-    color: Colors.error,
+    color: colors.error,
     fontSize: 13,
     fontWeight: '600',
     textAlign: 'center',
@@ -571,10 +574,10 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   templateCard: {
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.backgroundCard,
     borderRadius: 16,
     padding: 18,
-    shadowColor: Colors.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
@@ -590,13 +593,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   templateName: {
-    color: Colors.text,
+    color: colors.text,
     fontSize: 18,
     fontWeight: '800',
     marginBottom: 4,
   },
   templateMeta: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 13,
     fontWeight: '600',
   },
@@ -608,19 +611,19 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: Colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   itemsPreview: {
     borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
+    borderTopColor: colors.borderLight,
     marginTop: 14,
     paddingTop: 12,
     gap: 6,
   },
   itemPreviewText: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 13,
     fontWeight: '500',
   },
@@ -633,13 +636,13 @@ const styles = StyleSheet.create({
   emptyStateTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: Colors.text,
+    color: colors.text,
     marginTop: 20,
     marginBottom: 8,
   },
   emptyStateText: {
     fontSize: 15,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: '500',
     textAlign: 'center',
     maxWidth: 280,
@@ -649,13 +652,13 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: Colors.overlayDark,
+    backgroundColor: colors.overlayDark,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   modalContent: {
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.backgroundCard,
     borderRadius: 24,
     padding: 24,
     width: '100%',
@@ -665,7 +668,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 28,
     fontWeight: '800',
-    color: Colors.text,
+    color: colors.text,
     marginBottom: 18,
     textAlign: 'center',
   },
@@ -676,7 +679,7 @@ const styles = StyleSheet.create({
   resultsBox: {
     minHeight: 120,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     borderRadius: 14,
     overflow: 'hidden',
     justifyContent: 'center',
@@ -685,24 +688,24 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
+    borderBottomColor: colors.borderLight,
   },
   foodResultSelected: {
-    backgroundColor: Colors.primaryMuted,
+    backgroundColor: colors.primaryMuted,
   },
   foodName: {
-    color: Colors.text,
+    color: colors.text,
     fontSize: 15,
     fontWeight: '700',
   },
   foodMeta: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 12,
     fontWeight: '500',
     marginTop: 2,
   },
   emptyResultsText: {
-    color: Colors.textLight,
+    color: colors.textLight,
     fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',
@@ -712,21 +715,21 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: Colors.borderLight,
+    borderColor: colors.borderLight,
     paddingVertical: 14,
   },
   energyLabel: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 15,
     fontWeight: '700',
   },
   energyValue: {
-    color: Colors.text,
+    color: colors.text,
     fontSize: 16,
     fontWeight: '800',
   },
   qrButton: {
-    backgroundColor: Colors.primaryMuted,
+    backgroundColor: colors.primaryMuted,
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 18,
@@ -735,13 +738,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   qrButtonText: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 16,
     fontWeight: '800',
   },
   draftBox: {
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     borderRadius: 14,
     padding: 14,
     gap: 10,
@@ -752,12 +755,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   draftTitle: {
-    color: Colors.text,
+    color: colors.text,
     fontSize: 16,
     fontWeight: '800',
   },
   draftCalories: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 14,
     fontWeight: '700',
   },
@@ -766,7 +769,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
+    borderTopColor: colors.borderLight,
     paddingTop: 10,
     gap: 12,
   },
@@ -774,12 +777,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   draftItemName: {
-    color: Colors.text,
+    color: colors.text,
     fontSize: 14,
     fontWeight: '700',
   },
   draftItemMeta: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 12,
     fontWeight: '500',
     marginTop: 2,
@@ -790,10 +793,10 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.errorLight,
+    backgroundColor: colors.errorLight,
   },
   emptyDraftText: {
-    color: Colors.textLight,
+    color: colors.textLight,
     fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',

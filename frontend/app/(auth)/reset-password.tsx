@@ -13,7 +13,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Colors } from '@/constants/Colors';
+import type { AppColors } from '@/constants/Colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import { ApiError } from '@/services/api';
 import { authService } from '@/services/auth';
 
@@ -24,6 +25,8 @@ interface FormErrors {
 }
 
 export default function ResetPasswordScreen() {
+  const { colors, effectiveTheme } = useAppTheme();
+  const styles = createStyles(colors);
   const params = useLocalSearchParams<{ token?: string }>();
   const token = typeof params.token === 'string' ? params.token : '';
   const [password, setPassword] = useState('');
@@ -82,7 +85,7 @@ export default function ResetPasswordScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle={effectiveTheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -94,7 +97,7 @@ export default function ResetPasswordScreen() {
         >
           <View style={styles.content}>
             <View style={styles.iconCircle}>
-              <FontAwesome name="lock" size={38} color={Colors.primaryDark} />
+              <FontAwesome name="lock" size={38} color={colors.primaryDark} />
             </View>
             <Text style={styles.title}>Nueva contraseña</Text>
             <Text style={styles.subtitle}>
@@ -166,10 +169,10 @@ export default function ResetPasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   keyboardView: {
     flex: 1,
@@ -189,18 +192,18 @@ const styles = StyleSheet.create({
     width: 86,
     height: 86,
     borderRadius: 43,
-    backgroundColor: Colors.primaryMuted,
+    backgroundColor: colors.primaryMuted,
     justifyContent: 'center',
     alignItems: 'center',
   },
   title: {
-    color: Colors.text,
+    color: colors.text,
     fontSize: 30,
     fontWeight: '800',
     textAlign: 'center',
   },
   subtitle: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 16,
     fontWeight: '500',
     lineHeight: 23,
@@ -208,13 +211,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   errorText: {
-    color: Colors.error,
+    color: colors.error,
     fontSize: 13,
     fontWeight: '700',
     textAlign: 'center',
   },
   successText: {
-    color: Colors.success,
+    color: colors.success,
     fontSize: 13,
     fontWeight: '700',
     textAlign: 'center',

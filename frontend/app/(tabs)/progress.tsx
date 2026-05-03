@@ -14,7 +14,8 @@ import { FontAwesome } from '@expo/vector-icons';
 import Svg, { Circle, Line, Path, Polyline, Text as SvgText } from 'react-native-svg';
 import { Button } from '@/components/ui/Button';
 import { NumberInput } from '@/components/ui/NumberInput';
-import { Colors } from '@/constants/Colors';
+import type { AppColors } from '@/constants/Colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import { ApiError } from '@/services/api';
 import { progressService } from '@/services/progress';
 import type { ProgressDay, ProgressRange, ProgressResponse, WeightPoint } from '@/types/progress';
@@ -76,6 +77,8 @@ function ProgressChart({
   weights: WeightPoint[];
   goal: number | null;
 }) {
+  const { colors } = useAppTheme();
+  const styles = createStyles(colors);
   const calorieValues = calories.map((day) => day.calorias);
   const caloriePoints = buildPoints(calorieValues);
   const weightPoints = buildPoints(weights.map((item) => item.peso));
@@ -89,7 +92,7 @@ function ProgressChart({
   if (calories.length === 0 && weights.length === 0) {
     return (
       <View style={styles.chartEmpty}>
-        <FontAwesome name="area-chart" size={42} color={Colors.border} />
+        <FontAwesome name="area-chart" size={42} color={colors.border} />
         <Text style={styles.chartEmptyText}>Registra comidas o peso para ver tu grafico</Text>
       </View>
     );
@@ -103,7 +106,7 @@ function ProgressChart({
           y1={chartHeight - chartPadding}
           x2={chartWidth - chartPadding}
           y2={chartHeight - chartPadding}
-          stroke={Colors.border}
+          stroke={colors.border}
           strokeWidth="1"
         />
         <Line
@@ -111,7 +114,7 @@ function ProgressChart({
           y1={chartPadding}
           x2={chartPadding}
           y2={chartHeight - chartPadding}
-          stroke={Colors.border}
+          stroke={colors.border}
           strokeWidth="1"
         />
         {goalY && (
@@ -120,7 +123,7 @@ function ProgressChart({
             y1={goalY}
             x2={chartWidth - chartPadding}
             y2={goalY}
-            stroke={Colors.primaryLight}
+            stroke={colors.primaryLight}
             strokeDasharray="5 5"
             strokeWidth="1.5"
           />
@@ -131,7 +134,7 @@ function ProgressChart({
             <Path
               d={buildLinePath(caloriePoints)}
               fill="none"
-              stroke={Colors.primaryDark}
+              stroke={colors.primaryDark}
               strokeWidth="3"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -142,7 +145,7 @@ function ProgressChart({
           <Polyline
             points={weightPoints.map((point) => `${point.x},${point.y}`).join(' ')}
             fill="none"
-            stroke={Colors.secondary}
+            stroke={colors.secondary}
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -154,8 +157,8 @@ function ProgressChart({
             cx={point.x}
             cy={point.y}
             r="4"
-            fill={Colors.backgroundCard}
-            stroke={Colors.secondary}
+            fill={colors.backgroundCard}
+            stroke={colors.secondary}
             strokeWidth="2"
           />
         ))}
@@ -165,18 +168,18 @@ function ProgressChart({
             cx={point.x}
             cy={point.y}
             r="4"
-            fill={Colors.backgroundCard}
-            stroke={Colors.primaryDark}
+            fill={colors.backgroundCard}
+            stroke={colors.primaryDark}
             strokeWidth="2"
           />
         ))}
-        <SvgText x={chartPadding} y={chartHeight - 6} fill={Colors.textLight} fontSize="10">
+        <SvgText x={chartPadding} y={chartHeight - 6} fill={colors.textLight} fontSize="10">
           {labelPoints[0] ? formatShortDate(labelPoints[0]) : ''}
         </SvgText>
         <SvgText
           x={chartWidth - chartPadding - 28}
           y={chartHeight - 6}
-          fill={Colors.textLight}
+          fill={colors.textLight}
           fontSize="10"
         >
           {labelPoints.at(-1) ? formatShortDate(labelPoints[labelPoints.length - 1]) : ''}
@@ -200,12 +203,14 @@ function ProgressChart({
   );
 }
 
-function getDayColor(day: ProgressDay): string {
-  if (!day.registrado) return Colors.border;
-  return day.cumplido ? Colors.success : Colors.error;
+function getDayColor(day: ProgressDay, colors: AppColors): string {
+  if (!day.registrado) return colors.border;
+  return day.cumplido ? colors.success : colors.error;
 }
 
 export default function ProgressScreen() {
+  const { colors, effectiveTheme } = useAppTheme();
+  const styles = createStyles(colors);
   const [selectedRange, setSelectedRange] = useState<ProgressRange>('week');
   const [progress, setProgress] = useState<ProgressResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -283,7 +288,7 @@ export default function ProgressScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle={effectiveTheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       <View style={styles.headerBackground} />
 
       <ScrollView
@@ -334,13 +339,13 @@ export default function ProgressScreen() {
             accessibilityRole="button"
             accessibilityLabel="Actualizar peso"
           >
-            <FontAwesome name="plus" size={16} color={Colors.textWhite} />
+            <FontAwesome name="plus" size={16} color={colors.textWhite} />
           </TouchableOpacity>
         </View>
 
         {isLoading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator color={Colors.primary} />
+            <ActivityIndicator color={colors.primary} />
           </View>
         ) : (
           <>
@@ -348,7 +353,7 @@ export default function ProgressScreen() {
 
             {!hasHistory ? (
               <View style={styles.emptyState}>
-                <FontAwesome name="calendar-check-o" size={54} color={Colors.border} />
+                <FontAwesome name="calendar-check-o" size={54} color={colors.border} />
                 <Text style={styles.emptyTitle}>Empieza tu historial</Text>
                 <Text style={styles.emptyText}>
                   Registra comidas en la vista diaria para ver tu progreso.
@@ -406,12 +411,12 @@ export default function ProgressScreen() {
                       return (
                         <View key={day.fecha} style={styles.dayCell}>
                           <Text style={styles.dayName}>{weekDayLabels[date.getDay()]}</Text>
-                          <View style={[styles.dayBubble, { borderColor: getDayColor(day) }]}>
+                          <View style={[styles.dayBubble, { borderColor: getDayColor(day, colors) }]}>
                             <Text style={styles.dayNumber}>{date.getDate()}</Text>
                             <View
                               style={[
                                 styles.statusDot,
-                                { backgroundColor: getDayColor(day) },
+                                { backgroundColor: getDayColor(day, colors) },
                               ]}
                             />
                           </View>
@@ -474,10 +479,10 @@ export default function ProgressScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   headerBackground: {
     position: 'absolute',
@@ -485,7 +490,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 200,
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -499,30 +504,30 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '800',
-    color: Colors.text,
+    color: colors.text,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   segmentedControl: {
     flexDirection: 'row',
-    backgroundColor: Colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     borderRadius: 14,
     padding: 4,
     marginBottom: 20,
   },
   weightActionCard: {
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.backgroundCard,
     borderRadius: 16,
     padding: 16,
     marginBottom: 18,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: Colors.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
@@ -532,13 +537,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   weightTitle: {
-    color: Colors.text,
+    color: colors.text,
     fontSize: 16,
     fontWeight: '800',
     marginBottom: 4,
   },
   weightSubtitle: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 13,
     fontWeight: '600',
   },
@@ -546,7 +551,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -557,21 +562,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   segmentButtonActive: {
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
   },
   segmentText: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 14,
     fontWeight: '700',
   },
   segmentTextActive: {
-    color: Colors.textWhite,
+    color: colors.textWhite,
   },
   loadingContainer: {
     paddingVertical: 60,
   },
   errorText: {
-    color: Colors.error,
+    color: colors.error,
     fontSize: 13,
     fontWeight: '600',
     textAlign: 'center',
@@ -579,13 +584,13 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: Colors.overlayDark,
+    backgroundColor: colors.overlayDark,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   weightModalContent: {
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.backgroundCard,
     borderRadius: 24,
     padding: 24,
     width: '100%',
@@ -593,13 +598,13 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   modalTitle: {
-    color: Colors.text,
+    color: colors.text,
     fontSize: 24,
     fontWeight: '800',
     textAlign: 'center',
   },
   modalText: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 14,
     fontWeight: '500',
     textAlign: 'center',
@@ -608,35 +613,35 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   emptyState: {
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.backgroundCard,
     borderRadius: 20,
     padding: 34,
     alignItems: 'center',
-    shadowColor: Colors.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
     elevation: 2,
   },
   emptyTitle: {
-    color: Colors.text,
+    color: colors.text,
     fontSize: 20,
     fontWeight: '800',
     marginTop: 16,
     marginBottom: 8,
   },
   emptyText: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 15,
     fontWeight: '500',
     textAlign: 'center',
   },
   chartCard: {
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.backgroundCard,
     borderRadius: 20,
     padding: 18,
     marginBottom: 18,
-    shadowColor: Colors.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
@@ -649,24 +654,24 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   cardTitle: {
-    color: Colors.text,
+    color: colors.text,
     fontSize: 18,
     fontWeight: '800',
   },
   cardSubtitle: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 13,
     fontWeight: '600',
     marginTop: 3,
   },
   completionPill: {
-    backgroundColor: Colors.primaryMuted,
+    backgroundColor: colors.primaryMuted,
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 16,
   },
   completionText: {
-    color: Colors.primaryDark,
+    color: colors.primaryDark,
     fontSize: 14,
     fontWeight: '800',
   },
@@ -677,11 +682,11 @@ const styles = StyleSheet.create({
     height: chartHeight,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     borderRadius: 14,
   },
   chartEmptyText: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 14,
     fontWeight: '600',
     marginTop: 12,
@@ -703,13 +708,13 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   calorieDot: {
-    backgroundColor: Colors.primaryDark,
+    backgroundColor: colors.primaryDark,
   },
   weightDot: {
-    backgroundColor: Colors.secondary,
+    backgroundColor: colors.secondary,
   },
   legendText: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 12,
     fontWeight: '600',
   },
@@ -721,32 +726,32 @@ const styles = StyleSheet.create({
   },
   statBox: {
     width: '48%',
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.backgroundCard,
     borderRadius: 16,
     padding: 16,
     alignItems: 'center',
-    shadowColor: Colors.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
     elevation: 2,
   },
   statValue: {
-    color: Colors.text,
+    color: colors.text,
     fontSize: 24,
     fontWeight: '800',
   },
   statLabel: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 12,
     fontWeight: '700',
     marginTop: 4,
   },
   calendarCard: {
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.backgroundCard,
     borderRadius: 20,
     padding: 18,
-    shadowColor: Colors.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
@@ -764,7 +769,7 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   dayName: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 10,
     fontWeight: '800',
   },
@@ -777,7 +782,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dayNumber: {
-    color: Colors.text,
+    color: colors.text,
     fontSize: 14,
     fontWeight: '800',
   },
@@ -789,7 +794,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   dayCalories: {
-    color: Colors.textLight,
+    color: colors.textLight,
     fontSize: 10,
     fontWeight: '700',
   },

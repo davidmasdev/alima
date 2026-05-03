@@ -17,7 +17,8 @@ import { FontAwesome } from '@expo/vector-icons';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { SocialButton } from '@/components/ui/SocialButton';
-import { Colors } from '@/constants/Colors';
+import type { AppColors } from '@/constants/Colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import { ApiError } from '@/services/api';
 import { authService } from '@/services/auth';
 import { redirectAfterAuthenticatedSession } from '@/services/oauth';
@@ -32,6 +33,8 @@ interface FormErrors {
 }
 
 export default function RegisterScreen() {
+  const { colors, effectiveTheme } = useAppTheme();
+  const styles = createStyles(colors);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -160,7 +163,7 @@ export default function RegisterScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle={effectiveTheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       
       <View style={styles.headerBackground} />
       
@@ -181,7 +184,7 @@ export default function RegisterScreen() {
               accessibilityLabel="Volver"
             >
               <View style={styles.backButtonCircle}>
-                <FontAwesome name="arrow-left" size={18} color={Colors.text} />
+                <FontAwesome name="arrow-left" size={18} color={colors.text} />
               </View>
             </TouchableOpacity>
           </View>
@@ -295,10 +298,10 @@ export default function RegisterScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   headerBackground: {
     position: 'absolute',
@@ -306,7 +309,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 200,
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.background,
   },
   keyboardView: {
     flex: 1,
@@ -327,10 +330,10 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.backgroundCard,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: Colors.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -342,13 +345,13 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 32,
     fontWeight: '800',
-    color: Colors.text,
+    color: colors.text,
     marginBottom: 8,
     letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 16,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   formContainer: {
@@ -360,7 +363,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   formErrorText: {
-    color: Colors.error,
+    color: colors.error,
     fontSize: 13,
     fontWeight: '600',
     textAlign: 'center',
@@ -374,11 +377,11 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: Colors.border,
+    backgroundColor: colors.border,
   },
   dividerText: {
     fontSize: 14,
-    color: Colors.textLight,
+    color: colors.textLight,
     marginHorizontal: 16,
     fontWeight: '500',
   },
@@ -395,12 +398,12 @@ const styles = StyleSheet.create({
   },
   loginText: {
     fontSize: 15,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   loginLink: {
     fontSize: 15,
-    color: Colors.primaryDark,
+    color: colors.primaryDark,
     fontWeight: '700',
   },
 });

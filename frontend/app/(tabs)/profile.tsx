@@ -19,7 +19,8 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { NumberInput } from '@/components/ui/NumberInput';
-import { Colors } from '@/constants/Colors';
+import type { AppColors } from '@/constants/Colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import { ApiError } from '@/services/api';
 import { authService } from '@/services/auth';
 import { dailyLogService } from '@/services/dailyLog';
@@ -80,6 +81,8 @@ function formatDate(date: Date): string {
 }
 
 export default function ProfileScreen() {
+  const { colors, effectiveTheme, mode, setMode } = useAppTheme();
+  const styles = createStyles(colors);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -263,7 +266,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle={effectiveTheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
 
       <View style={styles.headerBackground} />
 
@@ -277,7 +280,7 @@ export default function ProfileScreen() {
 
         {isLoading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator color={Colors.primary} />
+            <ActivityIndicator color={colors.primary} />
           </View>
         ) : (
           <>
@@ -361,6 +364,45 @@ export default function ProfileScreen() {
               />
             </View>
 
+            <View style={styles.infoCard}>
+              <Text style={styles.cardTitle}>Apariencia</Text>
+              <View style={styles.themeOptions}>
+                {[
+                  { value: 'system', label: 'Sistema', icon: 'mobile' },
+                  { value: 'light', label: 'Claro', icon: 'sun-o' },
+                  { value: 'dark', label: 'Oscuro', icon: 'moon-o' },
+                ].map((option) => {
+                  const isSelected = mode === option.value;
+                  return (
+                    <TouchableOpacity
+                      key={option.value}
+                      style={[
+                        styles.themeOption,
+                        isSelected && styles.themeOptionSelected,
+                      ]}
+                      onPress={() => setMode(option.value as 'system' | 'light' | 'dark')}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Usar tema ${option.label}`}
+                    >
+                      <FontAwesome
+                        name={option.icon as any}
+                        size={18}
+                        color={isSelected ? colors.primaryDark : colors.textSecondary}
+                      />
+                      <Text
+                        style={[
+                          styles.themeOptionText,
+                          isSelected && styles.themeOptionTextSelected,
+                        ]}
+                      >
+                        {option.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
             <View style={styles.buttonsContainer}>
               <Button
                 title={isProfileComplete ? 'Editar' : 'Completar perfil'}
@@ -399,7 +441,7 @@ export default function ProfileScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalIcon}>
-              <FontAwesome name="exclamation-triangle" size={48} color={Colors.error} />
+              <FontAwesome name="exclamation-triangle" size={48} color={colors.error} />
             </View>
 
             <Text style={styles.modalTitle}>¿Eliminar cuenta?</Text>
@@ -425,7 +467,7 @@ export default function ProfileScreen() {
                 disabled={isDeleting}
               >
                 {isDeleting ? (
-                  <ActivityIndicator color={Colors.textWhite} />
+                  <ActivityIndicator color={colors.textWhite} />
                 ) : (
                   <Text style={styles.confirmButtonText}>Eliminar</Text>
                 )}
@@ -483,7 +525,7 @@ export default function ProfileScreen() {
                 disabled={isSavingMealTypes}
               >
                 {isSavingMealTypes ? (
-                  <ActivityIndicator color={Colors.textWhite} />
+                  <ActivityIndicator color={colors.textWhite} />
                 ) : (
                   <Text style={styles.confirmButtonText}>Guardar</Text>
                 )}
@@ -623,7 +665,7 @@ export default function ProfileScreen() {
                 disabled={isSaving}
               >
                 {isSaving ? (
-                  <ActivityIndicator color={Colors.textWhite} />
+                  <ActivityIndicator color={colors.textWhite} />
                 ) : (
                   <Text style={styles.confirmButtonText}>Guardar</Text>
                 )}
@@ -636,10 +678,10 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   headerBackground: {
     position: 'absolute',
@@ -647,7 +689,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 200,
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -661,37 +703,37 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '800',
-    color: Colors.text,
+    color: colors.text,
     letterSpacing: -0.5,
   },
   loadingContainer: {
     paddingVertical: 60,
   },
   errorText: {
-    color: Colors.error,
+    color: colors.error,
     fontSize: 13,
     fontWeight: '500',
     marginBottom: 12,
     textAlign: 'center',
   },
   incompleteBox: {
-    backgroundColor: Colors.errorLight,
+    backgroundColor: colors.errorLight,
     borderRadius: 16,
     padding: 16,
     marginBottom: 20,
   },
   incompleteText: {
-    color: Colors.error,
+    color: colors.error,
     fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',
   },
   infoCard: {
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.backgroundCard,
     borderRadius: 20,
     padding: 24,
     marginBottom: 32,
-    shadowColor: Colors.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -700,14 +742,44 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: Colors.text,
+    color: colors.text,
     marginBottom: 10,
   },
   mealTypesText: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 15,
     fontWeight: '600',
     marginBottom: 16,
+  },
+  themeOptions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 4,
+  },
+  themeOption: {
+    flex: 1,
+    minHeight: 78,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: 14,
+    backgroundColor: colors.backgroundSecondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 8,
+  },
+  themeOptionSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryMuted,
+  },
+  themeOptionText: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  themeOptionTextSelected: {
+    color: colors.primaryDark,
   },
   configureMealsButton: {
     width: '100%',
@@ -719,20 +791,20 @@ const styles = StyleSheet.create({
     gap: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
+    borderBottomColor: colors.borderLight,
   },
   infoRowLast: {
     borderBottomWidth: 0,
   },
   infoLabel: {
     fontSize: 15,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   infoValue: {
     flex: 1,
     fontSize: 15,
-    color: Colors.text,
+    color: colors.text,
     fontWeight: '600',
     textAlign: 'right',
   },
@@ -746,7 +818,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   deleteButton: {
-    backgroundColor: Colors.error,
+    backgroundColor: colors.error,
     paddingVertical: 16,
     paddingHorizontal: 28,
     borderRadius: 16,
@@ -754,32 +826,32 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   deleteButtonText: {
-    color: Colors.textWhite,
+    color: colors.textWhite,
     fontSize: 16,
     fontWeight: '700',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: Colors.overlayDark,
+    backgroundColor: colors.overlayDark,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   modalContent: {
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.backgroundCard,
     borderRadius: 24,
     padding: 28,
     width: '100%',
     maxWidth: 360,
     alignItems: 'center',
-    shadowColor: Colors.shadowDark,
+    shadowColor: colors.shadowDark,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 16,
     elevation: 10,
   },
   editModalContent: {
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: colors.backgroundCard,
     borderRadius: 24,
     padding: 24,
     width: '100%',
@@ -792,13 +864,13 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 22,
     fontWeight: '800',
-    color: Colors.text,
+    color: colors.text,
     marginBottom: 12,
     textAlign: 'center',
   },
   modalText: {
     fontSize: 15,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: '500',
     textAlign: 'center',
     marginBottom: 24,
@@ -818,21 +890,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cancelButton: {
-    backgroundColor: Colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
   },
   cancelButtonText: {
-    color: Colors.text,
+    color: colors.text,
     fontSize: 16,
     fontWeight: '600',
   },
   confirmButton: {
-    backgroundColor: Colors.error,
+    backgroundColor: colors.error,
   },
   saveButton: {
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
   },
   confirmButtonText: {
-    color: Colors.textWhite,
+    color: colors.textWhite,
     fontSize: 16,
     fontWeight: '700',
   },

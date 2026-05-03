@@ -6,7 +6,8 @@ import {
   View,
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import { Colors } from '@/constants/Colors';
+import type { AppColors } from '@/constants/Colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 interface SocialButtonProps {
   provider: 'apple' | 'google' | 'facebook';
@@ -15,29 +16,33 @@ interface SocialButtonProps {
   style?: ViewStyle;
 }
 
-const providerConfig = {
+function getProviderConfig(colors: AppColors) {
+  return {
   apple: {
     icon: 'apple',
-    color: Colors.apple,
-    bgColor: Colors.socialAppleBackground,
+    color: colors.apple,
+    bgColor: colors.socialAppleBackground,
     label: 'Continuar con Apple',
   },
   google: {
     icon: 'google',
-    color: Colors.google,
-    bgColor: Colors.socialGoogleBackground,
+    color: colors.google,
+    bgColor: colors.socialGoogleBackground,
     label: 'Continuar con Google',
   },
   facebook: {
     icon: 'facebook',
-    color: Colors.facebook,
-    bgColor: Colors.socialFacebookBackground,
+    color: colors.facebook,
+    bgColor: colors.socialFacebookBackground,
     label: 'Continuar con Facebook',
   },
-};
+  };
+}
 
 export function SocialButton({ provider, onPress, disabled = false, style }: SocialButtonProps) {
-  const config = providerConfig[provider];
+  const { colors } = useAppTheme();
+  const styles = createStyles(colors);
+  const config = getProviderConfig(colors)[provider];
 
   return (
     <TouchableOpacity
@@ -60,14 +65,14 @@ export function SocialButton({ provider, onPress, disabled = false, style }: Soc
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   button: {
     width: 60,
     height: 60,
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: Colors.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
