@@ -1,10 +1,12 @@
 from datetime import date
 from uuid import UUID
 
+import httpx
 from fastapi import HTTPException, status
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, joinedload
 
+from app.core.config import get_settings
 from app.models.alimento import Alimento
 from app.models.comida import Comida
 from app.models.registro import Registro
@@ -16,6 +18,7 @@ from app.schemas.daily_log import (
     DailyLogResponse,
     DailyTotalsResponse,
     FoodResponse,
+    FoodScanRequest,
     MealLogResponse,
     MealTypeResponse,
 )
@@ -23,6 +26,7 @@ from app.schemas.daily_log import (
 
 DEFAULT_MEAL_TYPES = ["Desayuno", "Comida", "Cena"]
 VALID_UNITS = {"g", "ml"}
+OFF_FIELDS = "product_name,brands,nutriments,nutrition_data_per"
 
 
 def ensure_default_meal_types(db: Session, user: Usuario) -> list[TipoComidaUsuario]:
@@ -96,6 +100,114 @@ def search_foods(db: Session, query: str | None) -> list[FoodResponse]:
         )
         for food in db.scalars(statement).all()
     ]
+
+
+def build_food_response(food: Alimento) -> FoodResponse:
+    return FoodResponse(
+        id=food.id,
+        nombre=food.nombre,
+        calorias=food.calorias,
+        proteinas=food.proteinas,
+        carbohidratos=food.carbohidratos,
+        grasas=food.grasas,
+        unidad_base=food.unidad_base,
+        codigo_qr=food.codigo_qr,
+    )
+
+
+def normalize_scan_code(code: str) -> str:
+    cleaned = code.strip()
+    if cleaned.startswith("http://") or cleaned.startswith("https://"):
+        cleaned = cleaned.rstrip("/").split("/")[-1]
+    return cleaned.strip()
+
+
+def parse_open_food_facts_product(code: str, payload: dict[str, object]) -> Alimento:
+    if payload.get("status") != 1:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No hemos reconocido este código. Puedes buscar el alimento manualmente",
+        )
+
+    product = payload.get("product")
+    if not isinstance(product, dict):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="El producto no contiene información suficiente",
+        )
+
+    nutriments = product.get("nutriments")
+    if not isinstance(nutriments, dict):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="El producto no contiene información nutricional suficiente",
+        )
+
+    calories = nutriments.get("energy-kcal_100g") or nutriments.get("energy-kcal")
+    proteins = nutriments.get("proteins_100g")
+    carbs = nutriments.get("carbohydrates_100g")
+    fats = nutriments.get("fat_100g")
+    if calories is None or proteins is None or carbs is None or fats is None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="El producto no contiene calorías y macros suficientes",
+        )
+
+    product_name = str(product.get("product_name") or "Producto escaneado").strip()
+    brands = str(product.get("brands") or "").strip()
+    name = f"{brands} {product_name}".strip() if brands else product_name
+    unit = "ml" if str(product.get("nutrition_data_per") or "").lower() == "serving" else "g"
+
+    return Alimento(
+        nombre=name[:180],
+        calorias=float(calories),
+        proteinas=float(proteins),
+        carbohidratos=float(carbs),
+        grasas=float(fats),
+        unidad_base=unit,
+        codigo_qr=code,
+    )
+
+
+def fetch_open_food_facts_product(code: str) -> dict[str, object]:
+    settings = get_settings()
+    url = f"{settings.open_food_facts_base_url.rstrip('/')}/api/v2/product/{code}.json"
+    response = httpx.get(
+        url,
+        params={"fields": OFF_FIELDS},
+        headers={"User-Agent": settings.open_food_facts_user_agent},
+        timeout=15,
+    )
+    response.raise_for_status()
+    payload = response.json()
+    return payload if isinstance(payload, dict) else {}
+
+
+def scan_food(db: Session, payload: FoodScanRequest) -> FoodResponse:
+    code = normalize_scan_code(payload.code)
+    if not code:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Código no válido",
+        )
+
+    existing = db.scalar(select(Alimento).where(Alimento.codigo_qr == code))
+    if existing is not None:
+        return build_food_response(existing)
+
+    try:
+        off_payload = fetch_open_food_facts_product(code)
+    except httpx.HTTPError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="No se pudo consultar la base de datos externa",
+        ) from None
+
+    food = parse_open_food_facts_product(code, off_payload)
+    db.add(food)
+    db.commit()
+    db.refresh(food)
+    return build_food_response(food)
 
 
 def calculate_entry(food: Alimento, entry: Registro) -> DailyEntryResponse:
@@ -237,4 +349,3 @@ def delete_daily_entry(db: Session, user: Usuario, entry_id: UUID) -> None:
 
     db.delete(entry)
     db.commit()
-

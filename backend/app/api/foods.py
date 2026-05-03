@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user
 from app.db.session import get_db
 from app.models.usuario import Usuario
-from app.schemas.daily_log import FoodResponse
-from app.services.daily_log import search_foods
+from app.schemas.daily_log import FoodResponse, FoodScanRequest
+from app.services.daily_log import scan_food, search_foods
 
 
 router = APIRouter()
@@ -19,3 +19,11 @@ def list_foods(
 ) -> list[FoodResponse]:
     return search_foods(db, query)
 
+
+@router.post("/scan", response_model=FoodResponse)
+def scan_food_code(
+    payload: FoodScanRequest,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+) -> FoodResponse:
+    return scan_food(db, payload)

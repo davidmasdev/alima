@@ -41,7 +41,8 @@
       ],
       "expo-web-browser",
       "@react-native-community/datetimepicker",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-camera"
     ],
     "experiments": {
       "typedRoutes": true,

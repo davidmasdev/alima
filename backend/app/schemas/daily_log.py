@@ -15,6 +15,10 @@ class FoodResponse(BaseModel):
     codigo_qr: str | None
 
 
+class FoodScanRequest(BaseModel):
+    code: str = Field(min_length=1, max_length=255)
+
+
 class MealTypeResponse(BaseModel):
     id: UUID
     nombre: str

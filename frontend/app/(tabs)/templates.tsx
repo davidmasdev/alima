@@ -11,7 +11,9 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { CameraView } from 'expo-camera';
 import { FontAwesome } from '@expo/vector-icons';
+import { FoodScannerModal } from '@/components/FoodScannerModal';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { NumberInput } from '@/components/ui/NumberInput';
@@ -51,6 +53,8 @@ export default function TemplatesScreen() {
   const [isSearching, setIsSearching] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isScannerVisible, setIsScannerVisible] = useState(false);
+  const [isCameraAvailable, setIsCameraAvailable] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadTemplates = useCallback(async () => {
@@ -69,6 +73,22 @@ export default function TemplatesScreen() {
   useEffect(() => {
     loadTemplates();
   }, [loadTemplates]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    CameraView.isAvailableAsync()
+      .then((available) => {
+        if (isMounted) setIsCameraAvailable(available);
+      })
+      .catch(() => {
+        if (isMounted) setIsCameraAvailable(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     let isActive = true;
@@ -134,6 +154,12 @@ export default function TemplatesScreen() {
     setQuery(food.nombre);
     setUnit(food.unidad_base);
     setQuantity('100');
+  };
+
+  const handleScannedFood = (food: Food) => {
+    handleSelectFood(food);
+    setFoods([food]);
+    setError(null);
   };
 
   const calculatedEnergy = useMemo(() => {
@@ -417,13 +443,15 @@ export default function TemplatesScreen() {
 
               <Button title="Anadir alimento" onPress={handleAddDraftItem} variant="outline" />
 
-              <TouchableOpacity
-                style={styles.qrButton}
-                onPress={() => setError('Escaneo QR disponible en RF-011')}
-              >
-                <Text style={styles.qrButtonText}>Escanear QR</Text>
-                <FontAwesome name="qrcode" size={22} color={Colors.textSecondary} />
-              </TouchableOpacity>
+              {isCameraAvailable && (
+                <TouchableOpacity
+                  style={styles.qrButton}
+                  onPress={() => setIsScannerVisible(true)}
+                >
+                  <Text style={styles.qrButtonText}>Escanear QR</Text>
+                  <FontAwesome name="qrcode" size={22} color={Colors.textSecondary} />
+                </TouchableOpacity>
+              )}
 
               <View style={styles.draftBox}>
                 <View style={styles.draftHeader}>
@@ -474,6 +502,12 @@ export default function TemplatesScreen() {
           </View>
         </View>
       </Modal>
+
+      <FoodScannerModal
+        visible={isScannerVisible}
+        onClose={() => setIsScannerVisible(false)}
+        onFoodScanned={handleScannedFood}
+      />
     </SafeAreaView>
   );
 }

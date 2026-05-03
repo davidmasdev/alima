@@ -26,6 +26,13 @@ export async function searchFoods(query: string): Promise<Food[]> {
   return requestWithToken<Food[]>(`/foods${params}`);
 }
 
+export async function scanFood(code: string): Promise<Food> {
+  return requestWithToken<Food>('/foods/scan', {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+  });
+}
+
 export async function getMealTypes(): Promise<MealType[]> {
   return requestWithToken<MealType[]>('/meal-types');
 }
@@ -67,6 +74,7 @@ export const dailyLogService = {
   deleteEntry,
   getDailyLog,
   getMealTypes,
+  scanFood,
   searchFoods,
   updateMealTypes,
 };
