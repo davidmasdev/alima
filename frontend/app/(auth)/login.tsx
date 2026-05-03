@@ -128,7 +128,7 @@ export default function LoginScreen() {
   };
 
   const handleForgotPassword = () => {
-    setErrors({ email: 'La recuperación de contraseña aún no está disponible' });
+    router.push('/forgot-password');
   };
 
   const handleBack = () => {

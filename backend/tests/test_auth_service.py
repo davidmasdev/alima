@@ -4,9 +4,15 @@ from uuid import uuid4
 import pytest
 from fastapi import HTTPException
 
-from app.models.usuario import Usuario
 from app.models.email_verification_token import EmailVerificationToken
-from app.schemas.auth import UserLoginRequest, UserRegisterRequest
+from app.models.password_reset_token import PasswordResetToken
+from app.models.usuario import Usuario
+from app.schemas.auth import (
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
+    UserLoginRequest,
+    UserRegisterRequest,
+)
 from app.services import auth
 
 
@@ -14,14 +20,14 @@ class FakeSession:
     def __init__(
         self,
         existing_user: Usuario | None = None,
-        existing_token: EmailVerificationToken | None = None,
+        existing_token: EmailVerificationToken | PasswordResetToken | None = None,
     ) -> None:
         self.existing_user = existing_user
         self.existing_token = existing_token
         self.added: list[object] = []
         self.committed = False
 
-    def scalar(self, statement: object) -> Usuario | None:
+    def scalar(self, statement: object) -> object | None:
         if self.existing_token is not None:
             return self.existing_token
         return self.existing_user
@@ -181,3 +187,113 @@ def test_verify_email_token_rejects_used_token() -> None:
     result = auth.verify_email_token(db, raw_token)
 
     assert result == "invalid"
+
+
+def test_request_password_reset_rejects_unknown_email() -> None:
+    db = FakeSession()
+
+    with pytest.raises(HTTPException) as error:
+        auth.request_password_reset(
+            db,
+            ForgotPasswordRequest(email="missing@example.com"),
+        )
+
+    assert error.value.status_code == 404
+
+
+def test_request_password_reset_creates_token_and_invalidates_previous(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    user = Usuario(email="user@example.com", contrasena_hash="hash", validada=True)
+    previous_token = PasswordResetToken(
+        usuario=user,
+        token_hash="previous",
+        created_at=datetime.now(timezone.utc),
+        expires_at=datetime.now(timezone.utc) + timedelta(minutes=30),
+        used_at=None,
+    )
+    user.password_reset_tokens = [previous_token]
+    db = FakeSession(existing_user=user)
+    monkeypatch.setattr(auth, "send_user_password_reset_email", lambda user, raw_token: None)
+
+    response = auth.request_password_reset(
+        db,
+        ForgotPasswordRequest(email="user@example.com"),
+    )
+
+    added_token = next(item for item in db.added if isinstance(item, PasswordResetToken))
+    assert response.message == auth.PASSWORD_RESET_SENT_MESSAGE
+    assert previous_token.used_at is not None
+    assert added_token.token_hash
+    assert added_token.used_at is None
+    assert db.committed is True
+
+
+def test_reset_password_updates_hash_and_consumes_token(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    user = Usuario(email="user@example.com", contrasena_hash="old-hash", validada=True)
+    raw_token = "reset-token"
+    reset_token = PasswordResetToken(
+        usuario=user,
+        token_hash=auth.hash_verification_token(raw_token),
+        created_at=datetime.now(timezone.utc),
+        expires_at=datetime.now(timezone.utc) + timedelta(minutes=30),
+        used_at=None,
+    )
+    db = FakeSession(existing_token=reset_token)
+    monkeypatch.setattr(auth, "hash_password", lambda password: f"hashed:{password}")
+
+    response = auth.reset_password(
+        db,
+        ResetPasswordRequest(token=raw_token, password="new-password"),
+    )
+
+    assert response.message == auth.PASSWORD_RESET_SUCCESS_MESSAGE
+    assert user.contrasena_hash == "hashed:new-password"
+    assert reset_token.used_at is not None
+    assert db.committed is True
+
+
+def test_reset_password_rejects_expired_token() -> None:
+    user = Usuario(email="user@example.com", contrasena_hash="old-hash", validada=True)
+    raw_token = "reset-token"
+    reset_token = PasswordResetToken(
+        usuario=user,
+        token_hash=auth.hash_verification_token(raw_token),
+        created_at=datetime.now(timezone.utc) - timedelta(hours=2),
+        expires_at=datetime.now(timezone.utc) - timedelta(minutes=1),
+        used_at=None,
+    )
+    db = FakeSession(existing_token=reset_token)
+
+    with pytest.raises(HTTPException) as error:
+        auth.reset_password(
+            db,
+            ResetPasswordRequest(token=raw_token, password="new-password"),
+        )
+
+    assert error.value.status_code == 400
+    assert user.contrasena_hash == "old-hash"
+
+
+def test_reset_password_rejects_used_token() -> None:
+    user = Usuario(email="user@example.com", contrasena_hash="old-hash", validada=True)
+    raw_token = "reset-token"
+    reset_token = PasswordResetToken(
+        usuario=user,
+        token_hash=auth.hash_verification_token(raw_token),
+        created_at=datetime.now(timezone.utc),
+        expires_at=datetime.now(timezone.utc) + timedelta(minutes=30),
+        used_at=datetime.now(timezone.utc),
+    )
+    db = FakeSession(existing_token=reset_token)
+
+    with pytest.raises(HTTPException) as error:
+        auth.reset_password(
+            db,
+            ResetPasswordRequest(token=raw_token, password="new-password"),
+        )
+
+    assert error.value.status_code == 400
+    assert user.contrasena_hash == "old-hash"

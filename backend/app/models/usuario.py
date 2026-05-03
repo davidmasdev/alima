@@ -57,3 +57,8 @@ class Usuario(UUIDPrimaryKeyMixin, Base):
         back_populates="usuario",
         cascade="all, delete-orphan",
     )
+    password_reset_tokens: Mapped[list["PasswordResetToken"]] = relationship(
+        "PasswordResetToken",
+        back_populates="usuario",
+        cascade="all, delete-orphan",
+    )

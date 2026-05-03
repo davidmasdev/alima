@@ -8,16 +8,21 @@ from app.models.usuario import Usuario
 from app.schemas.auth import (
     AuthMessageResponse,
     AuthTokenResponse,
+    ForgotPasswordRequest,
     ResendVerificationRequest,
+    ResetPasswordRequest,
     UserLoginRequest,
     UserRegisterRequest,
 )
 from app.schemas.auth import UserResponse
 from app.services.auth import (
-    build_frontend_verification_url,
     authenticate_user,
+    build_frontend_password_reset_url,
+    build_frontend_verification_url,
     register_user,
+    request_password_reset,
     resend_verification_email,
+    reset_password,
     verify_email_token,
 )
 
@@ -51,6 +56,27 @@ def resend_verification(
     db: Session = Depends(get_db),
 ) -> AuthMessageResponse:
     return resend_verification_email(db, payload)
+
+
+@router.post("/forgot-password", response_model=AuthMessageResponse)
+def forgot_password(
+    payload: ForgotPasswordRequest,
+    db: Session = Depends(get_db),
+) -> AuthMessageResponse:
+    return request_password_reset(db, payload)
+
+
+@router.get("/password-reset", include_in_schema=False)
+def password_reset(token: str) -> RedirectResponse:
+    return RedirectResponse(build_frontend_password_reset_url(token), status_code=302)
+
+
+@router.post("/reset-password", response_model=AuthMessageResponse)
+def reset_user_password(
+    payload: ResetPasswordRequest,
+    db: Session = Depends(get_db),
+) -> AuthMessageResponse:
+    return reset_password(db, payload)
 
 
 @router.get("/me", response_model=UserResponse)

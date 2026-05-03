@@ -5,9 +5,11 @@ import { apiRequest } from '@/services/api';
 import type {
   AuthMessageResponse,
   AuthResponse,
+  ForgotPasswordRequest,
   LoginRequest,
   RegisterRequest,
   ResendVerificationRequest,
+  ResetPasswordRequest,
   User,
 } from '@/types/auth';
 
@@ -104,6 +106,24 @@ export async function resendVerification(
   });
 }
 
+export async function forgotPassword(
+  payload: ForgotPasswordRequest,
+): Promise<AuthMessageResponse> {
+  return apiRequest<AuthMessageResponse>('/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function resetPassword(
+  payload: ResetPasswordRequest,
+): Promise<AuthMessageResponse> {
+  return apiRequest<AuthMessageResponse>('/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function me(): Promise<User> {
   const token = await getToken();
   if (!token) {
@@ -133,10 +153,12 @@ export const authService = {
   clearSession,
   getStoredUser,
   getToken,
+  forgotPassword,
   login,
   me,
   register,
   resendVerification,
+  resetPassword,
   restoreSession,
   saveSession,
 };

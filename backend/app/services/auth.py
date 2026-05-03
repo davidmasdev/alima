@@ -11,20 +11,25 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.core.security import create_access_token, hash_password, verify_password
 from app.models.email_verification_token import EmailVerificationToken
+from app.models.password_reset_token import PasswordResetToken
 from app.models.usuario import Usuario
 from app.schemas.auth import (
     AuthMessageResponse,
     AuthTokenResponse,
+    ForgotPasswordRequest,
     ResendVerificationRequest,
+    ResetPasswordRequest,
     UserLoginRequest,
     UserRegisterRequest,
 )
-from app.services.email import send_verification_email
+from app.services.email import send_password_reset_email, send_verification_email
 
 
 logger = logging.getLogger(__name__)
 GENERIC_RESEND_MESSAGE = "Si existe una cuenta pendiente, enviaremos un nuevo correo"
 REGISTER_MESSAGE = "Cuenta creada. Revisa tu correo para validarla"
+PASSWORD_RESET_SENT_MESSAGE = "Te hemos enviado un enlace para restablecer tu contraseña"
+PASSWORD_RESET_SUCCESS_MESSAGE = "Contraseña actualizada correctamente"
 
 
 def normalize_email(email: str) -> str:
@@ -50,6 +55,16 @@ def build_frontend_verification_url(status_value: str) -> str:
     return f"{settings.frontend_public_url.rstrip('/')}/verify-email?{urlencode({'status': status_value})}"
 
 
+def build_password_reset_url(token: str) -> str:
+    settings = get_settings()
+    return f"{settings.backend_public_url.rstrip('/')}/api/auth/password-reset?{urlencode({'token': token})}"
+
+
+def build_frontend_password_reset_url(token: str) -> str:
+    settings = get_settings()
+    return f"{settings.frontend_public_url.rstrip('/')}/reset-password?{urlencode({'token': token})}"
+
+
 def create_verification_token(db: Session, user: Usuario) -> str:
     settings = get_settings()
     now = datetime.now(timezone.utc)
@@ -65,11 +80,33 @@ def create_verification_token(db: Session, user: Usuario) -> str:
     return raw_token
 
 
+def create_password_reset_token(db: Session, user: Usuario) -> str:
+    settings = get_settings()
+    now = datetime.now(timezone.utc)
+    raw_token = secrets.token_urlsafe(32)
+    token = PasswordResetToken(
+        usuario=user,
+        token_hash=hash_verification_token(raw_token),
+        created_at=now,
+        expires_at=now + timedelta(minutes=settings.password_reset_expire_minutes),
+        used_at=None,
+    )
+    db.add(token)
+    return raw_token
+
+
 def send_user_verification_email(user: Usuario, raw_token: str) -> None:
     try:
         send_verification_email(user.email, build_verification_url(raw_token))
     except Exception:
         logger.exception("Could not send verification email to %s", user.email)
+
+
+def send_user_password_reset_email(user: Usuario, raw_token: str) -> None:
+    try:
+        send_password_reset_email(user.email, build_password_reset_url(raw_token))
+    except Exception:
+        logger.exception("Could not send password reset email to %s", user.email)
 
 
 def register_user(db: Session, payload: UserRegisterRequest) -> AuthMessageResponse:
@@ -149,3 +186,50 @@ def resend_verification_email(
     db.commit()
     send_user_verification_email(user, raw_token)
     return AuthMessageResponse(message=GENERIC_RESEND_MESSAGE, user=None)
+
+
+def request_password_reset(
+    db: Session,
+    payload: ForgotPasswordRequest,
+) -> AuthMessageResponse:
+    user = get_user_by_email(db, payload.email)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No existe una cuenta con ese correo",
+        )
+
+    now = datetime.now(timezone.utc)
+    for token in user.password_reset_tokens:
+        if token.used_at is None:
+            token.used_at = now
+
+    raw_token = create_password_reset_token(db, user)
+    db.commit()
+    send_user_password_reset_email(user, raw_token)
+    return AuthMessageResponse(message=PASSWORD_RESET_SENT_MESSAGE, user=None)
+
+
+def reset_password(db: Session, payload: ResetPasswordRequest) -> AuthMessageResponse:
+    token_hash = hash_verification_token(payload.token)
+    reset_token = db.scalar(
+        select(PasswordResetToken).where(PasswordResetToken.token_hash == token_hash)
+    )
+    now = datetime.now(timezone.utc)
+
+    if reset_token is None or reset_token.used_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El enlace de recuperación no es válido",
+        )
+
+    if reset_token.expires_at < now:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El enlace de recuperación ha caducado",
+        )
+
+    reset_token.usuario.contrasena_hash = hash_password(payload.password)
+    reset_token.used_at = now
+    db.commit()
+    return AuthMessageResponse(message=PASSWORD_RESET_SUCCESS_MESSAGE, user=None)
