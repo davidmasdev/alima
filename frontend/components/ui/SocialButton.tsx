@@ -11,6 +11,7 @@ import { Colors } from '@/constants/Colors';
 interface SocialButtonProps {
   provider: 'apple' | 'google' | 'facebook';
   onPress: () => void;
+  disabled?: boolean;
   style?: ViewStyle;
 }
 
@@ -35,16 +36,18 @@ const providerConfig = {
   },
 };
 
-export function SocialButton({ provider, onPress, style }: SocialButtonProps) {
+export function SocialButton({ provider, onPress, disabled = false, style }: SocialButtonProps) {
   const config = providerConfig[provider];
 
   return (
     <TouchableOpacity
       onPress={onPress}
-      style={[styles.button, { backgroundColor: config.bgColor }, style]}
+      disabled={disabled}
+      style={[styles.button, { backgroundColor: config.bgColor }, disabled && styles.disabled, style]}
       activeOpacity={0.8}
       accessibilityRole="button"
       accessibilityLabel={config.label}
+      accessibilityState={{ disabled }}
     >
       <View style={styles.iconContainer}>
         <FontAwesome 
@@ -73,5 +76,8 @@ const styles = StyleSheet.create({
   iconContainer: {
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  disabled: {
+    opacity: 0.5,
   },
 });

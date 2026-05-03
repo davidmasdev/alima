@@ -7,6 +7,7 @@ import type {
   AuthResponse,
   ForgotPasswordRequest,
   LoginRequest,
+  OAuthGoogleRequest,
   RegisterRequest,
   ResendVerificationRequest,
   ResetPasswordRequest,
@@ -124,6 +125,15 @@ export async function resetPassword(
   });
 }
 
+export async function googleOAuth(payload: OAuthGoogleRequest): Promise<AuthResponse> {
+  const authResponse = await apiRequest<AuthResponse>('/auth/oauth/google', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  await saveSession(authResponse);
+  return authResponse;
+}
+
 export async function me(): Promise<User> {
   const token = await getToken();
   if (!token) {
@@ -154,6 +164,7 @@ export const authService = {
   getStoredUser,
   getToken,
   forgotPassword,
+  googleOAuth,
   login,
   me,
   register,

@@ -9,6 +9,7 @@ from app.schemas.auth import (
     AuthMessageResponse,
     AuthTokenResponse,
     ForgotPasswordRequest,
+    OAuthGoogleRequest,
     ResendVerificationRequest,
     ResetPasswordRequest,
     UserLoginRequest,
@@ -17,6 +18,7 @@ from app.schemas.auth import (
 from app.schemas.auth import UserResponse
 from app.services.auth import (
     authenticate_user,
+    authenticate_google_user,
     build_frontend_password_reset_url,
     build_frontend_verification_url,
     register_user,
@@ -42,6 +44,14 @@ def register(payload: UserRegisterRequest, db: Session = Depends(get_db)) -> Aut
 @router.post("/login", response_model=AuthTokenResponse)
 def login(payload: UserLoginRequest, db: Session = Depends(get_db)) -> AuthTokenResponse:
     return authenticate_user(db, payload)
+
+
+@router.post("/oauth/google", response_model=AuthTokenResponse)
+def google_oauth_login(
+    payload: OAuthGoogleRequest,
+    db: Session = Depends(get_db),
+) -> AuthTokenResponse:
+    return authenticate_google_user(db, payload)
 
 
 @router.get("/verify-email", include_in_schema=False)

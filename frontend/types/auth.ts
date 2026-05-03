@@ -41,3 +41,7 @@ export interface ResetPasswordRequest {
   token: string;
   password: string;
 }
+
+export interface OAuthGoogleRequest {
+  id_token: string;
+}

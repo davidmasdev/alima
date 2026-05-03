@@ -2,6 +2,7 @@ from app.models.alimento import Alimento
 from app.models.analisis import Analisis
 from app.models.comida import Comida
 from app.models.email_verification_token import EmailVerificationToken
+from app.models.oauth_account import OAuthAccount
 from app.models.perfil_nutricional import PerfilNutricional
 from app.models.password_reset_token import PasswordResetToken
 from app.models.plantilla import Plantilla
@@ -17,6 +18,7 @@ __all__ = [
     "Analisis",
     "Comida",
     "EmailVerificationToken",
+    "OAuthAccount",
     "PerfilNutricional",
     "PasswordResetToken",
     "Plantilla",

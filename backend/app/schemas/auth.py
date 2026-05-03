@@ -29,6 +29,10 @@ class ResetPasswordRequest(BaseModel):
     password: str = Field(min_length=8, max_length=128)
 
 
+class OAuthGoogleRequest(BaseModel):
+    id_token: str = Field(min_length=1)
+
+
 class UserResponse(BaseModel):
     id: UUID
     email: EmailStr

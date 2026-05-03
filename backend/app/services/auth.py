@@ -11,12 +11,14 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.core.security import create_access_token, hash_password, verify_password
 from app.models.email_verification_token import EmailVerificationToken
+from app.models.oauth_account import OAuthAccount
 from app.models.password_reset_token import PasswordResetToken
 from app.models.usuario import Usuario
 from app.schemas.auth import (
     AuthMessageResponse,
     AuthTokenResponse,
     ForgotPasswordRequest,
+    OAuthGoogleRequest,
     ResendVerificationRequest,
     ResetPasswordRequest,
     UserLoginRequest,
@@ -30,6 +32,8 @@ GENERIC_RESEND_MESSAGE = "Si existe una cuenta pendiente, enviaremos un nuevo co
 REGISTER_MESSAGE = "Cuenta creada. Revisa tu correo para validarla"
 PASSWORD_RESET_SENT_MESSAGE = "Te hemos enviado un enlace para restablecer tu contraseña"
 PASSWORD_RESET_SUCCESS_MESSAGE = "Contraseña actualizada correctamente"
+GOOGLE_PROVIDER = "google"
+OAUTH_PASSWORD_PLACEHOLDER = "oauth:google"
 
 
 def normalize_email(email: str) -> str:
@@ -39,6 +43,19 @@ def normalize_email(email: str) -> str:
 def get_user_by_email(db: Session, email: str) -> Usuario | None:
     normalized_email = normalize_email(email)
     return db.scalar(select(Usuario).where(Usuario.email == normalized_email))
+
+
+def get_oauth_account(
+    db: Session,
+    provider: str,
+    provider_user_id: str,
+) -> OAuthAccount | None:
+    return db.scalar(
+        select(OAuthAccount).where(
+            OAuthAccount.provider == provider,
+            OAuthAccount.provider_user_id == provider_user_id,
+        )
+    )
 
 
 def hash_verification_token(token: str) -> str:
@@ -233,3 +250,83 @@ def reset_password(db: Session, payload: ResetPasswordRequest) -> AuthMessageRes
     reset_token.used_at = now
     db.commit()
     return AuthMessageResponse(message=PASSWORD_RESET_SUCCESS_MESSAGE, user=None)
+
+
+def verify_google_id_token(raw_id_token: str) -> dict[str, object]:
+    settings = get_settings()
+    if not settings.google_oauth_client_id:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="El inicio con Google no está configurado",
+        )
+
+    try:
+        from google.auth.transport import requests
+        from google.oauth2 import id_token
+
+        return id_token.verify_oauth2_token(
+            raw_id_token,
+            requests.Request(),
+            settings.google_oauth_client_id,
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Could not validate Google OAuth token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No se pudo validar la sesión de Google",
+        )
+
+
+def authenticate_google_user(db: Session, payload: OAuthGoogleRequest) -> AuthTokenResponse:
+    token_info = verify_google_id_token(payload.id_token)
+    provider_user_id = str(token_info.get("sub") or "")
+    email = normalize_email(str(token_info.get("email") or ""))
+    email_verified = token_info.get("email_verified")
+    display_name = token_info.get("name")
+
+    if not provider_user_id or not email:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="La cuenta de Google no contiene los datos necesarios",
+        )
+
+    if email_verified is not True and str(email_verified).lower() != "true":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="El correo de Google no está verificado",
+        )
+
+    oauth_account = get_oauth_account(db, GOOGLE_PROVIDER, provider_user_id)
+    if oauth_account is not None:
+        user = oauth_account.usuario
+        if not user.validada:
+            user.validada = True
+            db.commit()
+        return AuthTokenResponse(access_token=create_access_token(user.id), user=user)
+
+    user = get_user_by_email(db, email)
+    if user is None:
+        user = Usuario(
+            email=email,
+            nombre=str(display_name).strip() if display_name else None,
+            contrasena_hash=OAUTH_PASSWORD_PLACEHOLDER,
+            validada=True,
+        )
+        db.add(user)
+    else:
+        user.validada = True
+
+    db.add(
+        OAuthAccount(
+            usuario=user,
+            provider=GOOGLE_PROVIDER,
+            provider_user_id=provider_user_id,
+            email=email,
+            created_at=datetime.now(timezone.utc),
+        )
+    )
+    db.commit()
+    db.refresh(user)
+    return AuthTokenResponse(access_token=create_access_token(user.id), user=user)

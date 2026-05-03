@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     ai_request_timeout_seconds: int = Field(default=60, alias="AI_REQUEST_TIMEOUT_SECONDS")
     ai_max_output_tokens: int = Field(default=4096, alias="AI_MAX_OUTPUT_TOKENS")
     ai_thinking_budget: int = Field(default=0, alias="AI_THINKING_BUDGET")
+    google_oauth_client_id: str | None = Field(default=None, alias="GOOGLE_OAUTH_CLIENT_ID")
 
     @property
     def cors_origins(self) -> list[str]:

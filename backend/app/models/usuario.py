@@ -62,3 +62,8 @@ class Usuario(UUIDPrimaryKeyMixin, Base):
         back_populates="usuario",
         cascade="all, delete-orphan",
     )
+    oauth_accounts: Mapped[list["OAuthAccount"]] = relationship(
+        "OAuthAccount",
+        back_populates="usuario",
+        cascade="all, delete-orphan",
+    )

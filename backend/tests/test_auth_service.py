@@ -5,10 +5,12 @@ import pytest
 from fastapi import HTTPException
 
 from app.models.email_verification_token import EmailVerificationToken
+from app.models.oauth_account import OAuthAccount
 from app.models.password_reset_token import PasswordResetToken
 from app.models.usuario import Usuario
 from app.schemas.auth import (
     ForgotPasswordRequest,
+    OAuthGoogleRequest,
     ResetPasswordRequest,
     UserLoginRequest,
     UserRegisterRequest,
@@ -20,14 +22,18 @@ class FakeSession:
     def __init__(
         self,
         existing_user: Usuario | None = None,
-        existing_token: EmailVerificationToken | PasswordResetToken | None = None,
+        existing_token: EmailVerificationToken | PasswordResetToken | OAuthAccount | None = None,
+        scalar_results: list[object | None] | None = None,
     ) -> None:
         self.existing_user = existing_user
         self.existing_token = existing_token
+        self.scalar_results = scalar_results
         self.added: list[object] = []
         self.committed = False
 
     def scalar(self, statement: object) -> object | None:
+        if self.scalar_results is not None:
+            return self.scalar_results.pop(0)
         if self.existing_token is not None:
             return self.existing_token
         return self.existing_user
@@ -297,3 +303,119 @@ def test_reset_password_rejects_used_token() -> None:
 
     assert error.value.status_code == 400
     assert user.contrasena_hash == "old-hash"
+
+
+def test_google_oauth_creates_validated_user_and_account(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    db = FakeSession(scalar_results=[None, None])
+    monkeypatch.setattr(
+        auth,
+        "verify_google_id_token",
+        lambda raw_token: {
+            "sub": "google-user-id",
+            "email": "USER@example.com",
+            "email_verified": True,
+            "name": "Google User",
+        },
+    )
+    monkeypatch.setattr(auth, "create_access_token", lambda user_id: f"token:{user_id}")
+
+    response = auth.authenticate_google_user(
+        db,
+        OAuthGoogleRequest(id_token="google-token"),
+    )
+
+    added_user = next(item for item in db.added if isinstance(item, Usuario))
+    added_account = next(item for item in db.added if isinstance(item, OAuthAccount))
+    assert added_user.email == "user@example.com"
+    assert added_user.nombre == "Google User"
+    assert added_user.validada is True
+    assert added_user.contrasena_hash == auth.OAUTH_PASSWORD_PLACEHOLDER
+    assert added_account.provider == auth.GOOGLE_PROVIDER
+    assert added_account.provider_user_id == "google-user-id"
+    assert response.access_token == f"token:{added_user.id}"
+
+
+def test_google_oauth_links_existing_email(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    user = Usuario(email="user@example.com", contrasena_hash="hash", validada=False)
+    user.id = uuid4()
+    db = FakeSession(scalar_results=[None, user])
+    monkeypatch.setattr(
+        auth,
+        "verify_google_id_token",
+        lambda raw_token: {
+            "sub": "google-user-id",
+            "email": "user@example.com",
+            "email_verified": True,
+        },
+    )
+    monkeypatch.setattr(auth, "create_access_token", lambda user_id: f"token:{user_id}")
+
+    response = auth.authenticate_google_user(
+        db,
+        OAuthGoogleRequest(id_token="google-token"),
+    )
+
+    added_account = next(item for item in db.added if isinstance(item, OAuthAccount))
+    assert user.validada is True
+    assert added_account.usuario is user
+    assert response.access_token == f"token:{user.id}"
+
+
+def test_google_oauth_uses_existing_oauth_account(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    user = Usuario(email="user@example.com", contrasena_hash="hash", validada=True)
+    user.id = uuid4()
+    oauth_account = OAuthAccount(
+        usuario=user,
+        provider=auth.GOOGLE_PROVIDER,
+        provider_user_id="google-user-id",
+        email="user@example.com",
+        created_at=datetime.now(timezone.utc),
+    )
+    db = FakeSession(scalar_results=[oauth_account])
+    monkeypatch.setattr(
+        auth,
+        "verify_google_id_token",
+        lambda raw_token: {
+            "sub": "google-user-id",
+            "email": "user@example.com",
+            "email_verified": True,
+        },
+    )
+    monkeypatch.setattr(auth, "create_access_token", lambda user_id: f"token:{user_id}")
+
+    response = auth.authenticate_google_user(
+        db,
+        OAuthGoogleRequest(id_token="google-token"),
+    )
+
+    assert db.added == []
+    assert response.access_token == f"token:{user.id}"
+
+
+def test_google_oauth_rejects_unverified_email(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    db = FakeSession()
+    monkeypatch.setattr(
+        auth,
+        "verify_google_id_token",
+        lambda raw_token: {
+            "sub": "google-user-id",
+            "email": "user@example.com",
+            "email_verified": False,
+        },
+    )
+
+    with pytest.raises(HTTPException) as error:
+        auth.authenticate_google_user(
+            db,
+            OAuthGoogleRequest(id_token="google-token"),
+        )
+
+    assert error.value.status_code == 403

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
 import { FontAwesome } from '@expo/vector-icons';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -18,8 +20,9 @@ import { SocialButton } from '@/components/ui/SocialButton';
 import { Colors } from '@/constants/Colors';
 import { ApiError } from '@/services/api';
 import { authService } from '@/services/auth';
-import { profileService } from '@/services/profile';
+import { redirectAfterAuthenticatedSession } from '@/services/oauth';
 
+WebBrowser.maybeCompleteAuthSession();
 
 
 interface FormErrors {
@@ -35,6 +38,40 @@ export default function LoginScreen() {
   const [resendMessage, setResendMessage] = useState<string | null>(null);
   const [isResending, setIsResending] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSocialLoading, setIsSocialLoading] = useState(false);
+  const [googleRequest, googleResponse, promptGoogleAsync] = Google.useIdTokenAuthRequest({
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+  });
+
+  useEffect(() => {
+    const completeGoogleLogin = async () => {
+      if (googleResponse?.type !== 'success') return;
+
+      const idToken = googleResponse.params.id_token;
+      if (!idToken) {
+        setErrors({ form: 'Google no devolvió una sesión válida' });
+        setIsSocialLoading(false);
+        return;
+      }
+
+      try {
+        await authService.googleOAuth({ id_token: idToken });
+        await redirectAfterAuthenticatedSession();
+      } catch (error) {
+        if (error instanceof ApiError) {
+          setErrors({ form: error.detail });
+        } else {
+          setErrors({ form: 'No se pudo iniciar sesión con Google' });
+        }
+      } finally {
+        setIsSocialLoading(false);
+      }
+    };
+
+    completeGoogleLogin();
+  }, [googleResponse]);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -71,12 +108,7 @@ export default function LoginScreen() {
         email: email.trim(),
         password,
       });
-      const profile = await profileService.getProfile();
-      router.replace(
-        profileService.isProfileComplete(profile)
-          ? '/(tabs)/today'
-          : '/onboarding/step1',
-      );
+      await redirectAfterAuthenticatedSession();
     } catch (error) {
       if (error instanceof ApiError) {
         if (error.status === 401) {
@@ -123,8 +155,23 @@ export default function LoginScreen() {
       router.replace('/register');
   };
 
-  const handleSocialLogin = (_provider: 'apple' | 'google' | 'facebook') => {
-    setErrors({ email: 'El inicio con redes sociales aún no está disponible' });
+  const handleSocialLogin = async (provider: 'apple' | 'google' | 'facebook') => {
+    if (provider !== 'google') {
+      setErrors({ form: 'Este inicio de sesión estará disponible próximamente' });
+      return;
+    }
+
+    if (!googleRequest) {
+      setErrors({ form: 'El inicio con Google no está configurado' });
+      return;
+    }
+
+    setErrors({});
+    setIsSocialLoading(true);
+    const result = await promptGoogleAsync();
+    if (result.type !== 'success') {
+      setIsSocialLoading(false);
+    }
   };
 
   const handleForgotPassword = () => {
@@ -257,6 +304,7 @@ export default function LoginScreen() {
             <SocialButton
               provider="google"
               onPress={() => handleSocialLogin('google')}
+              disabled={isSocialLoading}
             />
             <SocialButton
               provider="facebook"
