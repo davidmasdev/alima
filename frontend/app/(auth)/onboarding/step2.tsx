@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
@@ -60,6 +60,8 @@ const goalOptions = [
   { value: 'lose', label: 'Perder peso' },
   { value: 'gain', label: 'Ganar peso' },
 ];
+
+const resultsRoute = '/(auth)/onboarding/results' as Href;
 
 export default function OnboardingStep2Screen() {
   const [activity, setActivity] = useState('');
@@ -118,8 +120,7 @@ export default function OnboardingStep2Screen() {
         peso: Number(weight),
         altura: Number(height),
       });
-      await profileService.clearOnboardingDraft();
-      router.replace('/(tabs)/today');
+      router.replace(resultsRoute);
     } catch (error) {
       if (error instanceof ApiError) {
         setErrors({ form: error.detail });

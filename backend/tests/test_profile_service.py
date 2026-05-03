@@ -62,6 +62,8 @@ def test_upsert_profile_creates_nutrition_profile() -> None:
     assert user.nombre == "David"
     assert user.perfil_nutricional is not None
     assert user.perfil_nutricional.peso == 80.0
+    assert response.tmb is not None
+    assert response.get is not None
     assert response.calorias_diarias is not None
 
 
@@ -99,3 +101,44 @@ def test_calculate_daily_calories_rejects_future_birth_date() -> None:
     with pytest.raises(Exception):
         profile.calculate_daily_calories(make_payload(fecha_nacimiento=date(2999, 1, 1)))
 
+
+def test_calorie_calculation_exposes_basal_get_and_goal_adjustment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class FixedDate(date):
+        @classmethod
+        def today(cls) -> date:
+            return date(2026, 5, 3)
+
+    monkeypatch.setattr(profile, "date", FixedDate)
+    payload = make_payload(
+        fecha_nacimiento=date(2000, 1, 1),
+        sexo="male",
+        peso=90,
+        altura=176,
+        nivel_actividad="sedentary",
+        objetivo="lose",
+    )
+
+    assert profile.calculate_basal_metabolic_rate(payload) == 1875
+    assert profile.calculate_total_daily_energy_expenditure(payload) == 2250
+    assert profile.calculate_daily_calories(payload) == 1750
+
+
+def test_daily_calories_has_minimum_floor(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FixedDate(date):
+        @classmethod
+        def today(cls) -> date:
+            return date(2026, 5, 3)
+
+    monkeypatch.setattr(profile, "date", FixedDate)
+    payload = make_payload(
+        fecha_nacimiento=date(2000, 1, 1),
+        sexo="female",
+        peso=40,
+        altura=150,
+        nivel_actividad="sedentary",
+        objetivo="lose",
+    )
+
+    assert profile.calculate_daily_calories(payload) == 1200

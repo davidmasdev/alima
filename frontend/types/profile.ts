@@ -7,6 +7,8 @@ export interface Profile {
   objetivo: string | null;
   peso: number | null;
   altura: number | null;
+  tmb: number | null;
+  get: number | null;
   calorias_diarias: number | null;
 }
 
@@ -25,4 +27,3 @@ export interface OnboardingDraft {
   sexo: string;
   fecha_nacimiento: string;
 }
-

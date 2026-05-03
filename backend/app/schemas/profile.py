@@ -22,7 +22,8 @@ class ProfileResponse(BaseModel):
     objetivo: str | None
     peso: float | None
     altura: int | None
+    tmb: float | None
+    get: float | None
     calorias_diarias: float | None
 
     model_config = ConfigDict(from_attributes=True)
-

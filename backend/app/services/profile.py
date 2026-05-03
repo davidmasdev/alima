@@ -33,7 +33,7 @@ def calculate_age(birth_date: date) -> int:
     return age
 
 
-def calculate_daily_calories(payload: ProfileUpsertRequest) -> float:
+def validate_calorie_inputs(payload: ProfileUpsertRequest) -> int:
     age = calculate_age(payload.fecha_nacimiento)
     if age <= 0:
         raise HTTPException(
@@ -53,18 +53,59 @@ def calculate_daily_calories(payload: ProfileUpsertRequest) -> float:
             detail="Objetivo no válido",
         )
 
+    return age
+
+
+def calculate_basal_metabolic_rate(payload: ProfileUpsertRequest) -> float:
+    age = validate_calorie_inputs(payload)
     if payload.sexo == "female":
         basal_metabolic_rate = 10 * payload.peso + 6.25 * payload.altura - 5 * age - 161
     else:
         basal_metabolic_rate = 10 * payload.peso + 6.25 * payload.altura - 5 * age + 5
 
-    calories = basal_metabolic_rate * ACTIVITY_FACTORS[payload.nivel_actividad]
+    return round(basal_metabolic_rate, 2)
+
+
+def calculate_total_daily_energy_expenditure(payload: ProfileUpsertRequest) -> float:
+    basal_metabolic_rate = calculate_basal_metabolic_rate(payload)
+    return round(basal_metabolic_rate * ACTIVITY_FACTORS[payload.nivel_actividad], 2)
+
+
+def calculate_daily_calories(payload: ProfileUpsertRequest) -> float:
+    calories = calculate_total_daily_energy_expenditure(payload)
     calories += GOAL_ADJUSTMENTS[payload.objetivo]
     return round(max(calories, 1200), 2)
 
 
+def build_calculation_payload(user: Usuario) -> ProfileUpsertRequest | None:
+    profile = user.perfil_nutricional
+    if profile is None or user.nombre is None or user.fecha_nacimiento is None:
+        return None
+
+    return ProfileUpsertRequest(
+        nombre=user.nombre,
+        fecha_nacimiento=user.fecha_nacimiento,
+        sexo=profile.sexo,
+        nivel_actividad=profile.nivel_actividad,
+        objetivo=profile.objetivo,
+        peso=profile.peso,
+        altura=profile.altura,
+    )
+
+
 def build_profile_response(user: Usuario) -> ProfileResponse:
     profile = user.perfil_nutricional
+    calculation_payload = build_calculation_payload(user)
+    basal_metabolic_rate = (
+        calculate_basal_metabolic_rate(calculation_payload)
+        if calculation_payload
+        else None
+    )
+    total_daily_energy_expenditure = (
+        calculate_total_daily_energy_expenditure(calculation_payload)
+        if calculation_payload
+        else None
+    )
     return ProfileResponse(
         email=user.email,
         nombre=user.nombre,
@@ -74,6 +115,8 @@ def build_profile_response(user: Usuario) -> ProfileResponse:
         objetivo=profile.objetivo if profile else None,
         peso=profile.peso if profile else None,
         altura=profile.altura if profile else None,
+        tmb=basal_metabolic_rate,
+        get=total_daily_energy_expenditure,
         calorias_diarias=profile.calorias_diarias if profile else None,
     )
 
