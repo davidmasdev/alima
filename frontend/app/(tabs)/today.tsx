@@ -116,8 +116,9 @@ export default function TodayScreen() {
   const dateKey = useMemo(() => formatDate(selectedDate), [selectedDate]);
   const dayTransitionKey = dailyLog?.fecha ?? dateKey;
   const todayKey = useMemo(() => formatDate(new Date()), []);
-  const headerTitle = dateKey === todayKey ? 'Hoy' : formatHeaderDate(selectedDate);
-  const headerSubtitle = dateKey === todayKey
+  const isViewingToday = dateKey === todayKey;
+  const headerTitle = isViewingToday ? 'Hoy' : formatHeaderDate(selectedDate);
+  const headerSubtitle = isViewingToday
     ? 'Registro nutricional diario'
     : formatDisplayDate(selectedDate);
 
@@ -192,6 +193,14 @@ export default function TodayScreen() {
     setDateTransitionDirection(direction);
     lightImpact();
     setSelectedDate((currentDate) => addDays(currentDate, direction));
+  };
+
+  const goToToday = () => {
+    const today = new Date();
+    const direction = dateKey > todayKey ? -1 : 1;
+    setDateTransitionDirection(direction);
+    lightImpact();
+    setSelectedDate(today);
   };
 
   const openAnalysisModal = () => {
@@ -597,6 +606,16 @@ export default function TodayScreen() {
               {isRefreshingDay && <ActivityIndicator size="small" color={colors.primary} />}
             </View>
             <Text style={styles.date}>{headerSubtitle}</Text>
+            {!isViewingToday && (
+              <TouchableOpacity
+                style={styles.todayShortcutButton}
+                onPress={goToToday}
+                accessibilityRole="button"
+                accessibilityLabel="Volver a hoy"
+              >
+                <Text style={styles.todayShortcutText}>Volver a hoy</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           <TouchableOpacity
@@ -1336,6 +1355,20 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     fontWeight: '500',
     textAlign: 'center',
     marginTop: 8,
+  },
+  todayShortcutButton: {
+    marginTop: 10,
+    minHeight: 30,
+    paddingHorizontal: 14,
+    borderRadius: 15,
+    backgroundColor: colors.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  todayShortcutText: {
+    color: colors.primaryDark,
+    fontSize: 13,
+    fontWeight: '800',
   },
   loadingContainer: {
     paddingVertical: 60,
