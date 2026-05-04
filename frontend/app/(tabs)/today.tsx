@@ -58,6 +58,12 @@ function formatDisplayDate(date: Date): string {
   });
 }
 
+function formatHeaderDate(date: Date): string {
+  return date.toLocaleDateString('es-ES', {
+    weekday: 'long',
+  });
+}
+
 function addDays(date: Date, amount: number): Date {
   const nextDate = new Date(date);
   nextDate.setDate(nextDate.getDate() + amount);
@@ -109,6 +115,11 @@ export default function TodayScreen() {
 
   const dateKey = useMemo(() => formatDate(selectedDate), [selectedDate]);
   const dayTransitionKey = dailyLog?.fecha ?? dateKey;
+  const todayKey = useMemo(() => formatDate(new Date()), []);
+  const headerTitle = dateKey === todayKey ? 'Hoy' : formatHeaderDate(selectedDate);
+  const headerSubtitle = dateKey === todayKey
+    ? 'Registro nutricional diario'
+    : formatDisplayDate(selectedDate);
 
   const loadDailyData = useCallback(async () => {
     if (!hasLoadedDailyDataRef.current) {
@@ -571,8 +582,31 @@ export default function TodayScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <Text style={styles.greeting}>Hoy</Text>
-          <Text style={styles.date}>Registro nutricional diario</Text>
+          <TouchableOpacity
+            style={styles.headerDateButton}
+            onPress={() => changeSelectedDate(-1)}
+            accessibilityRole="button"
+            accessibilityLabel="Ver dia anterior"
+          >
+            <FontAwesome name="chevron-left" size={18} color={colors.textSecondary} />
+          </TouchableOpacity>
+
+          <View style={styles.headerTitleGroup}>
+            <View style={styles.headerTitleRow}>
+              <Text style={styles.greeting}>{headerTitle}</Text>
+              {isRefreshingDay && <ActivityIndicator size="small" color={colors.primary} />}
+            </View>
+            <Text style={styles.date}>{headerSubtitle}</Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.headerDateButton}
+            onPress={() => changeSelectedDate(1)}
+            accessibilityRole="button"
+            accessibilityLabel="Ver dia siguiente"
+          >
+            <FontAwesome name="chevron-right" size={18} color={colors.textSecondary} />
+          </TouchableOpacity>
         </View>
 
         {isLoading ? (
@@ -582,19 +616,6 @@ export default function TodayScreen() {
         ) : (
           <>
             {error && <Text style={styles.errorText}>{error}</Text>}
-
-            <View style={styles.dateNavigator}>
-              <TouchableOpacity onPress={() => changeSelectedDate(-1)}>
-                <FontAwesome name="chevron-left" size={18} color={colors.textSecondary} />
-              </TouchableOpacity>
-              <View style={styles.dateCenter}>
-                <Text style={styles.dayText}>{formatDisplayDate(selectedDate)}</Text>
-                {isRefreshingDay && <ActivityIndicator size="small" color={colors.primary} />}
-              </View>
-              <TouchableOpacity onPress={() => changeSelectedDate(1)}>
-                <FontAwesome name="chevron-right" size={18} color={colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
 
             <FadeSlideView
               triggerKey={dayTransitionKey}
@@ -1277,19 +1298,44 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     paddingBottom: 100,
   },
   header: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
     marginBottom: 32,
+  },
+  headerDateButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: colors.backgroundSecondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitleGroup: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerTitleRow: {
+    minHeight: 39,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
   },
   greeting: {
     fontSize: 32,
     fontWeight: '800',
     color: colors.text,
-    marginBottom: 8,
+    textAlign: 'center',
+    textTransform: 'capitalize',
   },
   date: {
     fontSize: 16,
     color: colors.textSecondary,
     fontWeight: '500',
+    textAlign: 'center',
+    marginTop: 8,
   },
   loadingContainer: {
     paddingVertical: 60,
@@ -1370,26 +1416,6 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
     fontWeight: '500',
-  },
-  dateNavigator: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-    paddingHorizontal: 4,
-  },
-  dateCenter: {
-    minWidth: 150,
-    minHeight: 24,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-  },
-  dayText: {
-    color: colors.textSecondary,
-    fontSize: 16,
-    fontWeight: '700',
   },
   mealSection: {
     backgroundColor: colors.backgroundCard,
