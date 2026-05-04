@@ -10,7 +10,7 @@ import type { AppColors } from '@/constants/Colors';
 import { useAppTheme } from '@/contexts/ThemeContext';
 
 interface SocialButtonProps {
-  provider: 'apple' | 'google' | 'facebook';
+  provider: 'google';
   onPress: () => void;
   disabled?: boolean;
   style?: ViewStyle;
@@ -18,23 +18,11 @@ interface SocialButtonProps {
 
 function getProviderConfig(colors: AppColors) {
   return {
-  apple: {
-    icon: 'apple',
-    color: colors.apple,
-    bgColor: colors.socialAppleBackground,
-    label: 'Continuar con Apple',
-  },
   google: {
     icon: 'google',
     color: colors.google,
     bgColor: colors.socialGoogleBackground,
     label: 'Continuar con Google',
-  },
-  facebook: {
-    icon: 'facebook',
-    color: colors.facebook,
-    bgColor: colors.socialFacebookBackground,
-    label: 'Continuar con Facebook',
   },
   };
 }

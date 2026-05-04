@@ -134,12 +134,7 @@ export default function RegisterScreen() {
     }
   };
 
-  const handleSocialLogin = async (provider: 'apple' | 'google' | 'facebook') => {
-    if (provider !== 'google') {
-      setErrors({ form: 'Este registro estará disponible próximamente' });
-      return;
-    }
-
+  const handleGoogleLogin = async () => {
     if (!googleRequest) {
       setErrors({ form: 'El registro con Google no está configurado' });
       return;
@@ -268,17 +263,9 @@ export default function RegisterScreen() {
 
           <View style={styles.socialContainer}>
             <SocialButton
-              provider="apple"
-              onPress={() => handleSocialLogin('apple')}
-            />
-            <SocialButton
               provider="google"
-              onPress={() => handleSocialLogin('google')}
+              onPress={handleGoogleLogin}
               disabled={isSocialLoading}
-            />
-            <SocialButton
-              provider="facebook"
-              onPress={() => handleSocialLogin('facebook')}
             />
           </View>
 

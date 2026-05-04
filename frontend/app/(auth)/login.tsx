@@ -158,12 +158,7 @@ export default function LoginScreen() {
       router.replace('/register');
   };
 
-  const handleSocialLogin = async (provider: 'apple' | 'google' | 'facebook') => {
-    if (provider !== 'google') {
-      setErrors({ form: 'Este inicio de sesión estará disponible próximamente' });
-      return;
-    }
-
+  const handleGoogleLogin = async () => {
     if (!googleRequest) {
       setErrors({ form: 'El inicio con Google no está configurado' });
       return;
@@ -301,17 +296,9 @@ export default function LoginScreen() {
 
           <View style={styles.socialContainer}>
             <SocialButton
-              provider="apple"
-              onPress={() => handleSocialLogin('apple')}
-            />
-            <SocialButton
               provider="google"
-              onPress={() => handleSocialLogin('google')}
+              onPress={handleGoogleLogin}
               disabled={isSocialLoading}
-            />
-            <SocialButton
-              provider="facebook"
-              onPress={() => handleSocialLogin('facebook')}
             />
           </View>
 
