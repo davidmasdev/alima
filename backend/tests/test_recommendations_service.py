@@ -1,5 +1,6 @@
 from datetime import date
 from uuid import uuid4
+from types import SimpleNamespace
 
 import pytest
 from fastapi import HTTPException
@@ -7,6 +8,7 @@ from fastapi import HTTPException
 from app.models.perfil_nutricional import PerfilNutricional
 from app.models.recomendacion import Recomendacion
 from app.models.usuario import Usuario
+from app.models.alimento import Alimento
 from app.schemas.daily_log import (
     DailyEntryResponse,
     DailyLogResponse,
@@ -16,6 +18,7 @@ from app.schemas.daily_log import (
 from app.schemas.recommendations import RecommendationRequest
 from app.services import recommendations
 from app.services.recommendations import (
+    apply_recommendation_to_daily_log,
     calculate_remaining,
     generate_recommendation,
     get_macro_targets,
@@ -37,6 +40,24 @@ class FakeSession:
 
     def refresh(self, item: object) -> None:
         item.id = uuid4()
+
+
+class FakeApplySession(FakeSession):
+    def __init__(self, recommendation: Recomendacion) -> None:
+        super().__init__()
+        self.recommendation = recommendation
+        self.scalar_calls = 0
+
+    def scalar(self, statement: object) -> object | None:
+        self.scalar_calls += 1
+        if self.scalar_calls == 1:
+            return self.recommendation
+        return None
+
+    def flush(self) -> None:
+        for item in self.added:
+            if not getattr(item, "id", None):
+                item.id = uuid4()
 
 
 def make_user(with_profile: bool = True) -> Usuario:
@@ -220,3 +241,53 @@ def test_generate_recommendation_saves_ai_result(monkeypatch: pytest.MonkeyPatch
     assert response.contenido.alimentos[0].nombre == "Pollo"
     assert response.calorias_restantes == 1300
     assert response.proteinas_restantes == 51
+
+
+def test_apply_recommendation_to_daily_log_uses_food_names_without_ai_prefix(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    user = make_user()
+    recommendation = Recomendacion(
+        usuario_id=user.id,
+        fecha=date(2026, 5, 2),
+        prompt=None,
+        resultado="""
+        {
+          "nombre": "Cena sencilla",
+          "alimentos": [
+            {
+              "nombre": "Pollo",
+              "cantidad": 150,
+              "unidad": "g",
+              "calorias": 250,
+              "proteinas": 35,
+              "carbohidratos": 0,
+              "grasas": 8
+            }
+          ],
+          "calorias": 250,
+          "proteinas": 35,
+          "carbohidratos": 0,
+          "grasas": 8,
+          "explicacion": "Aporta proteina."
+        }
+        """,
+    )
+    recommendation.id = uuid4()
+    db = FakeApplySession(recommendation)
+    monkeypatch.setattr(
+        recommendations,
+        "ensure_default_meal_types",
+        lambda *args: [SimpleNamespace(nombre="Desayuno")],
+    )
+    monkeypatch.setattr(recommendations, "get_daily_log", lambda *args: make_daily_log())
+
+    apply_recommendation_to_daily_log(
+        db,
+        user,
+        recommendation.id,
+        recommendations.RecommendationApplyRequest(fecha=date(2026, 5, 2), tipo="Desayuno"),
+    )
+
+    created_food = next(item for item in db.added if isinstance(item, Alimento))
+    assert created_food.nombre == "Pollo"

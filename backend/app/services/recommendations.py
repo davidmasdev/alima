@@ -397,7 +397,7 @@ def apply_recommendation_to_daily_log(
     for item in content.alimentos:
         factor = item.cantidad / 100
         food = Alimento(
-            nombre=f"IA - {item.nombre}",
+            nombre=item.nombre,
             calorias=round(item.calorias / factor, 2),
             proteinas=round(item.proteinas / factor, 2),
             carbohidratos=round(item.carbohidratos / factor, 2),
