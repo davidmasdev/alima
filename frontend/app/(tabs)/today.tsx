@@ -74,6 +74,10 @@ function round(value: number): number {
   return Math.round(value * 10) / 10;
 }
 
+function formatFoodCount(count: number): string {
+  return `${count} ${count === 1 ? 'alimento' : 'alimentos'}`;
+}
+
 export default function TodayScreen() {
   const { colors, effectiveTheme } = useAppTheme();
   const styles = createStyles(colors);
@@ -536,7 +540,12 @@ export default function TodayScreen() {
   const renderMeal = (meal: MealLog) => (
     <View key={meal.tipo} style={styles.mealSection}>
       <View style={styles.mealHeader}>
-        <Text style={styles.mealTitle}>{meal.tipo}</Text>
+        <View style={styles.mealTitleGroup}>
+          <Text style={styles.mealTitle}>{meal.tipo}</Text>
+          <Text style={styles.mealSubtitle}>
+            {formatFoodCount(meal.entries.length)} · {round(meal.calorias)} Kcal
+          </Text>
+        </View>
         <TouchableOpacity
           style={styles.addMealButton}
           onPress={() => openAddModal(meal.tipo)}
@@ -547,37 +556,63 @@ export default function TodayScreen() {
         </TouchableOpacity>
       </View>
       {meal.entries.length > 0 ? (
-        <View style={styles.entriesTable}>
-          <Text style={styles.mealTotal}>Total: {round(meal.calorias)} Kcal</Text>
-          <View style={styles.tableHeader}>
-            <Text style={[styles.tableCell, styles.foodCell]}>Alimento</Text>
-            <Text style={styles.tableCell}>Cantidad</Text>
-            <Text style={styles.tableCell}>Kcal</Text>
-            <Text style={styles.actionHeaderCell}> </Text>
-          </View>
+        <View style={styles.mealBody}>
           {meal.entries.map((entry) => (
-            <View key={entry.id} style={styles.tableRow}>
-              <Text style={[styles.tableCell, styles.foodCell]}>{entry.alimento_nombre}</Text>
-              <Text style={styles.tableCell}>{entry.cantidad} {entry.unidad}</Text>
-              <Text style={styles.tableCell}>{round(entry.calorias)}</Text>
-              <TouchableOpacity
-                style={styles.deleteEntryButton}
-                onPress={() => openDeleteEntryModal(entry)}
-                disabled={deletingEntryId === entry.id}
-                accessibilityRole="button"
-                accessibilityLabel={`Eliminar ${entry.alimento_nombre}`}
-              >
-                {deletingEntryId === entry.id ? (
-                  <ActivityIndicator size="small" color={colors.error} />
-                ) : (
-                  <FontAwesome name="trash" size={14} color={colors.error} />
-                )}
-              </TouchableOpacity>
+            <View key={entry.id} style={styles.entryCard}>
+              <View style={styles.entryMainRow}>
+                <View style={styles.entryTextGroup}>
+                  <View style={styles.entryTitleRow}>
+                    <Text style={styles.entryName} numberOfLines={2}>
+                      {entry.alimento_nombre}
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.deleteEntryButton}
+                      onPress={() => openDeleteEntryModal(entry)}
+                      disabled={deletingEntryId === entry.id}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Eliminar ${entry.alimento_nombre}`}
+                    >
+                      {deletingEntryId === entry.id ? (
+                        <ActivityIndicator size="small" color={colors.error} />
+                      ) : (
+                        <FontAwesome name="trash" size={14} color={colors.error} />
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                  <Text style={styles.entryQuantity}>
+                    {entry.cantidad} {entry.unidad}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.entryBottomRow}>
+                <View style={styles.entryMetaRow}>
+                  <Text style={styles.entryMacroChip}>{round(entry.proteinas)}g Prot</Text>
+                  <Text style={styles.entryMacroChip}>{round(entry.carbohidratos)}g Carb</Text>
+                  <Text style={styles.entryMacroChip}>{round(entry.grasas)}g Grasas</Text>
+                </View>
+                <View style={styles.entryCaloriesBlock}>
+                  <Text style={styles.entryCaloriesValue}>{round(entry.calorias)}</Text>
+                  <Text style={styles.entryCaloriesLabel}>Kcal</Text>
+                </View>
+              </View>
             </View>
           ))}
         </View>
       ) : (
-        <Text style={styles.emptyMealText}>Sin alimentos registrados</Text>
+        <View style={styles.emptyMealBox}>
+          <Text style={styles.emptyMealTitle}>Sin alimentos todavía</Text>
+          <Text style={styles.emptyMealText}>Añade lo que has comido en {meal.tipo.toLowerCase()}.</Text>
+          <TouchableOpacity
+            style={styles.emptyMealButton}
+            onPress={() => openAddModal(meal.tipo)}
+            accessibilityRole="button"
+            accessibilityLabel={`Añadir alimento a ${meal.tipo}`}
+          >
+            <FontAwesome name="plus" size={13} color={colors.primaryDark} />
+            <Text style={styles.emptyMealButtonText}>Añadir alimento</Text>
+          </TouchableOpacity>
+        </View>
       )}
     </View>
   );
@@ -1387,7 +1422,7 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     backgroundColor: colors.backgroundCard,
     borderRadius: 20,
     padding: 24,
-    marginBottom: 24,
+    marginBottom: 18,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 24,
@@ -1452,45 +1487,131 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   },
   mealSection: {
     backgroundColor: colors.backgroundCard,
-    borderRadius: 16,
-    marginBottom: 18,
+    borderRadius: 18,
+    marginBottom: 16,
     overflow: 'hidden',
     shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   mealHeader: {
-    backgroundColor: colors.primaryMuted,
-    paddingVertical: 14,
+    backgroundColor: colors.backgroundCard,
+    paddingVertical: 16,
     paddingHorizontal: 18,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+  },
+  mealTitleGroup: {
+    flex: 1,
   },
   mealTitle: {
+    color: colors.text,
+    fontSize: 20,
+    fontWeight: '900',
+    marginBottom: 3,
+  },
+  mealSubtitle: {
     color: colors.textSecondary,
-    fontSize: 17,
+    fontSize: 13,
     fontWeight: '700',
   },
   addMealButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: colors.primaryDark,
     justifyContent: 'center',
     alignItems: 'center',
+    marginLeft: 14,
   },
-  entriesTable: {
+  mealBody: {
     padding: 16,
+    gap: 12,
   },
-  mealTotal: {
+  entryCard: {
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    padding: 14,
+    gap: 12,
+  },
+  entryMainRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  entryTextGroup: {
+    flex: 1,
+  },
+  entryTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  entryName: {
+    flex: 1,
     color: colors.text,
     fontSize: 16,
     fontWeight: '800',
-    textAlign: 'center',
-    marginBottom: 12,
+    lineHeight: 21,
+    marginBottom: 4,
+  },
+  entryQuantity: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  entryBottomRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  entryCaloriesBlock: {
+    minWidth: 76,
+    minHeight: 46,
+    borderRadius: 13,
+    backgroundColor: colors.backgroundCard,
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  entryCaloriesValue: {
+    color: colors.text,
+    fontSize: 19,
+    fontWeight: '900',
+    lineHeight: 22,
+  },
+  entryCaloriesLabel: {
+    color: colors.textSecondary,
+    fontSize: 10,
+    fontWeight: '800',
+    marginTop: 1,
+  },
+  entryMetaRow: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  entryMacroChip: {
+    color: colors.textSecondary,
+    backgroundColor: colors.backgroundCard,
+    borderRadius: 999,
+    paddingVertical: 5,
+    paddingHorizontal: 9,
+    fontSize: 11,
+    fontWeight: '800',
+    overflow: 'hidden',
   },
   tableHeader: {
     flexDirection: 'row',
@@ -1512,24 +1633,51 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     flex: 1.4,
     textAlign: 'left',
   },
-  actionHeaderCell: {
-    width: 34,
-  },
   deleteEntryButton: {
-    width: 34,
-    height: 30,
-    borderRadius: 15,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: colors.errorLight,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 6,
+  },
+  emptyMealBox: {
+    margin: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    backgroundColor: colors.backgroundSecondary,
+    padding: 16,
+    alignItems: 'center',
+  },
+  emptyMealTitle: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: '800',
+    marginBottom: 5,
   },
   emptyMealText: {
-    color: colors.textLight,
-    fontSize: 14,
+    color: colors.textSecondary,
+    fontSize: 13,
     fontWeight: '600',
-    padding: 18,
     textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 12,
+  },
+  emptyMealButton: {
+    minHeight: 36,
+    borderRadius: 18,
+    backgroundColor: colors.primaryMuted,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+  },
+  emptyMealButtonText: {
+    color: colors.primaryDark,
+    fontSize: 13,
+    fontWeight: '800',
   },
   addButton: {
     width: '100%',
