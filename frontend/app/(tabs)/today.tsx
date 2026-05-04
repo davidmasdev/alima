@@ -12,6 +12,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
+import { AnimatedModalContent } from '@/components/animated/AnimatedModalContent';
+import { FadeSlideView } from '@/components/animated/FadeSlideView';
 import { FoodScannerModal } from '@/components/FoodScannerModal';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -25,6 +27,7 @@ import { dailyLogService } from '@/services/dailyLog';
 import { profileService } from '@/services/profile';
 import { recommendationsService } from '@/services/recommendations';
 import { templatesService } from '@/services/templates';
+import { errorFeedback, mediumImpact, successFeedback } from '@/services/haptics';
 import type { AnalysisResponse } from '@/types/analysis';
 import type { DailyEntry, DailyLog, Food, MealLog } from '@/types/dailyLog';
 import type { Profile } from '@/types/profile';
@@ -331,14 +334,17 @@ export default function TodayScreen() {
 
   const handleAddEntry = async () => {
     if (!selectedFood) {
+      errorFeedback();
       setError('Selecciona un alimento');
       return;
     }
     if (!quantity.trim() || isNaN(Number(quantity)) || Number(quantity) <= 0) {
+      errorFeedback();
       setError('Ingresa una cantidad válida');
       return;
     }
 
+    mediumImpact();
     setIsSaving(true);
     setError(null);
     try {
@@ -350,6 +356,7 @@ export default function TodayScreen() {
         unidad: unit,
       });
       setIsAddModalVisible(false);
+      successFeedback();
       await loadDailyData();
     } catch (caughtError) {
       if (caughtError instanceof ApiError) {
@@ -363,6 +370,7 @@ export default function TodayScreen() {
   };
 
   const handleApplyTemplate = async (template: MealTemplate) => {
+    mediumImpact();
     setIsSaving(true);
     setError(null);
     try {
@@ -373,6 +381,7 @@ export default function TodayScreen() {
       });
       setDailyLog(updatedLog);
       setIsAddModalVisible(false);
+      successFeedback();
     } catch (caughtError) {
       if (caughtError instanceof ApiError) {
         setError(caughtError.detail);
@@ -407,6 +416,7 @@ export default function TodayScreen() {
     setError(null);
     try {
       await dailyLogService.deleteEntry(entryId);
+      successFeedback();
       setDailyLog((currentLog) => {
         if (!currentLog) return currentLog;
 
@@ -646,7 +656,7 @@ export default function TodayScreen() {
         onRequestClose={closeAnalysisModal}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <AnimatedModalContent style={styles.modalContent} visible={isAnalysisModalVisible}>
             <Text style={styles.modalTitle}>Analisis IA</Text>
 
             <ScrollView
@@ -721,7 +731,7 @@ export default function TodayScreen() {
                 style={styles.modalActionButton}
               />
             </ScrollView>
-          </View>
+          </AnimatedModalContent>
         </View>
       </Modal>
 
@@ -732,7 +742,7 @@ export default function TodayScreen() {
         onRequestClose={closeAddModal}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <AnimatedModalContent style={styles.modalContent} visible={isAddModalVisible}>
             <View style={styles.addModalHeader}>
               {addFlowStep !== 'choose' ? (
                 <TouchableOpacity
@@ -762,6 +772,11 @@ export default function TodayScreen() {
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
             >
+              <FadeSlideView
+                triggerKey={`${addFlowStep}-${selectedMealType}`}
+                axis="x"
+                style={styles.stepContent}
+              >
               {mealTypeOptions.length > 1 && (
                 <View style={styles.mealTypeChips}>
                   {mealTypeOptions.map((option) => (
@@ -1034,8 +1049,9 @@ export default function TodayScreen() {
                   {error && <Text style={styles.errorText}>{error}</Text>}
                 </>
               )}
+              </FadeSlideView>
             </ScrollView>
-          </View>
+          </AnimatedModalContent>
         </View>
       </Modal>
 
@@ -1052,7 +1068,7 @@ export default function TodayScreen() {
         onRequestClose={closeRecommendationModal}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <AnimatedModalContent style={styles.modalContent} visible={isRecommendationModalVisible}>
             <Text style={styles.modalTitle}>Recomendacion IA</Text>
 
             <ScrollView
@@ -1173,7 +1189,7 @@ export default function TodayScreen() {
                 style={styles.modalActionButton}
               />
             </ScrollView>
-          </View>
+          </AnimatedModalContent>
         </View>
       </Modal>
 
@@ -1184,7 +1200,10 @@ export default function TodayScreen() {
         onRequestClose={closeDeleteEntryModal}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.confirmModalContent}>
+          <AnimatedModalContent
+            style={styles.confirmModalContent}
+            visible={entryToDelete !== null}
+          >
             <Text style={styles.confirmTitle}>Eliminar alimento</Text>
             <Text style={styles.confirmText}>
               {`Seguro que quieres eliminar "${entryToDelete?.alimento_nombre}" del diario?`}
@@ -1204,7 +1223,7 @@ export default function TodayScreen() {
               size="large"
               style={styles.modalActionButton}
             />
-          </View>
+          </AnimatedModalContent>
         </View>
       </Modal>
     </SafeAreaView>
@@ -1505,6 +1524,9 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   modalScrollContent: {
     gap: 16,
     paddingBottom: 4,
+  },
+  stepContent: {
+    gap: 16,
   },
   addModalHeader: {
     flexDirection: 'row',

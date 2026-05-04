@@ -1,11 +1,11 @@
 import React from 'react';
 import { 
-  TouchableOpacity, 
   StyleSheet, 
   ViewStyle,
   View,
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
+import { AnimatedPressable } from '@/components/animated/AnimatedPressable';
 import type { AppColors } from '@/constants/Colors';
 import { useAppTheme } from '@/contexts/ThemeContext';
 
@@ -33,11 +33,10 @@ export function SocialButton({ provider, onPress, disabled = false, style }: Soc
   const config = getProviderConfig(colors)[provider];
 
   return (
-    <TouchableOpacity
+    <AnimatedPressable
       onPress={onPress}
       disabled={disabled}
       style={[styles.button, { backgroundColor: config.bgColor }, disabled && styles.disabled, style]}
-      activeOpacity={0.8}
       accessibilityRole="button"
       accessibilityLabel={config.label}
       accessibilityState={{ disabled }}
@@ -49,7 +48,7 @@ export function SocialButton({ provider, onPress, disabled = false, style }: Soc
           color={config.color} 
         />
       </View>
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
 }
 

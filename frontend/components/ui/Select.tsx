@@ -9,6 +9,7 @@ import {
   Animated,
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
+import { AnimatedModalContent } from '@/components/animated/AnimatedModalContent';
 import type { AppColors } from '@/constants/Colors';
 import { useAppTheme } from '@/contexts/ThemeContext';
 
@@ -120,7 +121,7 @@ export function Select({
         onRequestClose={handleClose}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <AnimatedModalContent style={styles.modalContent} visible={isVisible}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{placeholder}</Text>
               <TouchableOpacity
@@ -171,7 +172,7 @@ export function Select({
                 </TouchableOpacity>
               ))}
             </ScrollView>
-          </View>
+          </AnimatedModalContent>
         </View>
       </Modal>
     </View>

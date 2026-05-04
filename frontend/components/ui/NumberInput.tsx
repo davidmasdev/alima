@@ -38,7 +38,7 @@ export function NumberInput({
   const handleFocus = () => {
     setIsFocused(true);
     Animated.spring(scaleAnim, {
-      toValue: 1.02,
+      toValue: 1.01,
       useNativeDriver: true,
       friction: 8,
     }).start();

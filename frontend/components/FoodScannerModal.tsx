@@ -14,6 +14,7 @@ import {
   useCameraPermissions,
 } from 'expo-camera';
 import { FontAwesome } from '@expo/vector-icons';
+import { AnimatedModalContent } from '@/components/animated/AnimatedModalContent';
 import { Button } from '@/components/ui/Button';
 import type { AppColors } from '@/constants/Colors';
 import { useAppTheme } from '@/contexts/ThemeContext';
@@ -74,7 +75,7 @@ export function FoodScannerModal({
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <View style={styles.content}>
+        <AnimatedModalContent style={styles.content} visible={visible}>
           <View style={styles.header}>
             <Text style={styles.title}>Escanear QR</Text>
             <TouchableOpacity
@@ -130,7 +131,7 @@ export function FoodScannerModal({
             size="large"
             style={styles.actionButton}
           />
-        </View>
+        </AnimatedModalContent>
       </View>
     </Modal>
   );

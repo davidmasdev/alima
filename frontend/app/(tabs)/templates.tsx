@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesome } from '@expo/vector-icons';
+import { AnimatedModalContent } from '@/components/animated/AnimatedModalContent';
+import { FadeSlideView } from '@/components/animated/FadeSlideView';
 import { FoodScannerModal } from '@/components/FoodScannerModal';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -20,6 +22,7 @@ import type { AppColors } from '@/constants/Colors';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { ApiError } from '@/services/api';
 import { dailyLogService } from '@/services/dailyLog';
+import { errorFeedback, mediumImpact, successFeedback } from '@/services/haptics';
 import { templatesService } from '@/services/templates';
 import type { Food } from '@/types/dailyLog';
 import type { MealTemplate, TemplateItemPayload } from '@/types/templates';
@@ -185,10 +188,12 @@ export default function TemplatesScreen() {
 
   const handleAddDraftItem = () => {
     if (!selectedFood) {
+      errorFeedback();
       setError('Selecciona un alimento');
       return;
     }
     if (!quantity.trim() || isNaN(Number(quantity)) || Number(quantity) <= 0) {
+      errorFeedback();
       setError('Ingresa una cantidad valida');
       return;
     }
@@ -209,6 +214,7 @@ export default function TemplatesScreen() {
     setFoods([]);
     setTemplateFlowStep('choose');
     setError(null);
+    successFeedback();
   };
 
   const handleRemoveDraftItem = (index: number) => {
@@ -258,14 +264,17 @@ export default function TemplatesScreen() {
 
   const handleSaveTemplate = async () => {
     if (!name.trim()) {
+      errorFeedback();
       setError('El nombre es obligatorio');
       return;
     }
     if (items.length === 0) {
+      errorFeedback();
       setError('Anade al menos un alimento');
       return;
     }
 
+    mediumImpact();
     setIsSaving(true);
     setError(null);
     try {
@@ -283,6 +292,7 @@ export default function TemplatesScreen() {
         await templatesService.createTemplate(payload);
       }
       setIsModalVisible(false);
+      successFeedback();
       await loadTemplates();
     } catch (caughtError) {
       if (caughtError instanceof ApiError) {
@@ -307,6 +317,7 @@ export default function TemplatesScreen() {
           onPress: async () => {
             try {
               await templatesService.deleteTemplate(template.id);
+              successFeedback();
               await loadTemplates();
             } catch {
               setError('No se pudo eliminar la plantilla');
@@ -419,7 +430,7 @@ export default function TemplatesScreen() {
         onRequestClose={closeModal}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <AnimatedModalContent style={styles.modalContent} visible={isModalVisible}>
             <View style={styles.modalHeader}>
               <TouchableOpacity
                 style={styles.modalIconButton}
@@ -449,6 +460,11 @@ export default function TemplatesScreen() {
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
             >
+              <FadeSlideView
+                triggerKey={templateFlowStep}
+                axis="x"
+                style={styles.stepContent}
+              >
               {templateFlowStep === 'details' && (
                 <>
                   <Text style={styles.stepText}>Ponle un nombre reconocible a la plantilla.</Text>
@@ -723,8 +739,9 @@ export default function TemplatesScreen() {
                   />
                 </>
               )}
+              </FadeSlideView>
             </ScrollView>
-          </View>
+          </AnimatedModalContent>
         </View>
       </Modal>
 
@@ -912,6 +929,9 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   modalScrollContent: {
     gap: 16,
     paddingBottom: 4,
+  },
+  stepContent: {
+    gap: 16,
   },
   stepText: {
     color: colors.textSecondary,

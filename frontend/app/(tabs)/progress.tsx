@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesome } from '@expo/vector-icons';
 import Svg, { Circle, Line, Path, Polyline, Text as SvgText } from 'react-native-svg';
+import { AnimatedModalContent } from '@/components/animated/AnimatedModalContent';
 import { Button } from '@/components/ui/Button';
 import { NumberInput } from '@/components/ui/NumberInput';
 import type { AppColors } from '@/constants/Colors';
@@ -441,7 +442,7 @@ export default function ProgressScreen() {
         onRequestClose={closeWeightModal}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.weightModalContent}>
+          <AnimatedModalContent style={styles.weightModalContent} visible={isWeightModalVisible}>
             <Text style={styles.modalTitle}>Actualizar peso</Text>
             <Text style={styles.modalText}>Registra tu peso de hoy para ver la evolucion.</Text>
 
@@ -472,7 +473,7 @@ export default function ProgressScreen() {
               size="large"
               style={styles.modalButton}
             />
-          </View>
+          </AnimatedModalContent>
         </View>
       </Modal>
     </SafeAreaView>

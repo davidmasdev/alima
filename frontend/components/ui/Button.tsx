@@ -1,6 +1,5 @@
 import React from 'react';
 import { 
-  TouchableOpacity, 
   Text, 
   StyleSheet, 
   ActivityIndicator, 
@@ -8,6 +7,7 @@ import {
   TextStyle,
   View 
 } from 'react-native';
+import { AnimatedPressable } from '@/components/animated/AnimatedPressable';
 import type { AppColors } from '@/constants/Colors';
 import { useAppTheme } from '@/contexts/ThemeContext';
 
@@ -60,11 +60,10 @@ export function Button({
 
   if (variant === 'primary') {
     return (
-      <TouchableOpacity
+      <AnimatedPressable
         onPress={onPress}
         disabled={disabled || loading}
         style={[styles.buttonContainer, style]}
-        activeOpacity={0.9}
         accessibilityRole="button"
         accessibilityLabel={title}
         accessibilityState={{ disabled: disabled || loading, busy: loading }}
@@ -87,7 +86,7 @@ export function Button({
             </View>
           )}
         </View>
-      </TouchableOpacity>
+      </AnimatedPressable>
     );
   }
 
@@ -118,7 +117,7 @@ export function Button({
   };
 
   return (
-    <TouchableOpacity
+    <AnimatedPressable
       onPress={onPress}
       disabled={disabled || loading}
       style={[
@@ -128,7 +127,6 @@ export function Button({
         (disabled || loading) && styles.disabledButton,
         style,
       ]}
-      activeOpacity={0.8}
       accessibilityRole="button"
       accessibilityLabel={title}
       accessibilityState={{ disabled: disabled || loading, busy: loading }}
@@ -145,7 +143,7 @@ export function Button({
           </Text>
         </View>
       )}
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
 }
 

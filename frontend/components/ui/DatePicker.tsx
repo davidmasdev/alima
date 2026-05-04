@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { AnimatedModalContent } from '@/components/animated/AnimatedModalContent';
 import type { AppColors } from '@/constants/Colors';
 import { useAppTheme } from '@/contexts/ThemeContext';
 
@@ -225,7 +226,7 @@ export function DatePicker({
         onRequestClose={handleCancel}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <AnimatedModalContent style={styles.modalContent} visible={isVisible}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{placeholder}</Text>
               <TouchableOpacity
@@ -259,7 +260,7 @@ export function DatePicker({
             >
               <Text style={styles.confirmButtonText}>Confirmar</Text>
             </TouchableOpacity>
-          </View>
+          </AnimatedModalContent>
         </View>
       </Modal>
     </View>

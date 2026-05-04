@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
+import { AnimatedModalContent } from '@/components/animated/AnimatedModalContent';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
@@ -494,7 +495,7 @@ export default function ProfileScreen() {
         onRequestClose={cancelDelete}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <AnimatedModalContent style={styles.modalContent} visible={isDeleteModalVisible}>
             <View style={styles.modalIcon}>
               <FontAwesome name="exclamation-triangle" size={48} color={colors.error} />
             </View>
@@ -528,7 +529,7 @@ export default function ProfileScreen() {
                 )}
               </TouchableOpacity>
             </View>
-          </View>
+          </AnimatedModalContent>
         </View>
       </Modal>
 
@@ -539,7 +540,7 @@ export default function ProfileScreen() {
         onRequestClose={closeMealTypesEdit}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <AnimatedModalContent style={styles.modalContent} visible={isMealTypesModalVisible}>
             <Text style={styles.modalTitle}>Configurar comidas</Text>
             <Text style={styles.modalText}>
               Elige cuántas comidas aparecen en la vista diaria.
@@ -674,7 +675,7 @@ export default function ProfileScreen() {
                 )}
               </TouchableOpacity>
             </View>
-          </View>
+          </AnimatedModalContent>
         </View>
       </Modal>
 
@@ -688,7 +689,7 @@ export default function ProfileScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.modalOverlay}
         >
-          <View style={styles.editModalContent}>
+          <AnimatedModalContent style={styles.editModalContent} visible={isEditModalVisible}>
             <Text style={styles.modalTitle}>Editar perfil</Text>
 
             <ScrollView
@@ -814,7 +815,7 @@ export default function ProfileScreen() {
                 )}
               </TouchableOpacity>
             </View>
-          </View>
+          </AnimatedModalContent>
         </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
