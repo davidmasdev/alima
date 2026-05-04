@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { CameraView } from 'expo-camera';
 import { FontAwesome } from '@expo/vector-icons';
 import { FoodScannerModal } from '@/components/FoodScannerModal';
 import { Button } from '@/components/ui/Button';
@@ -73,7 +72,6 @@ export default function TodayScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
   const [isScannerVisible, setIsScannerVisible] = useState(false);
-  const [isCameraAvailable, setIsCameraAvailable] = useState(false);
   const [isAnalysisModalVisible, setIsAnalysisModalVisible] = useState(false);
   const [isRecommendationModalVisible, setIsRecommendationModalVisible] = useState(false);
   const [isTemplateModalVisible, setIsTemplateModalVisible] = useState(false);
@@ -121,22 +119,6 @@ export default function TodayScreen() {
   useEffect(() => {
     loadDailyData();
   }, [loadDailyData]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    CameraView.isAvailableAsync()
-      .then((available) => {
-        if (isMounted) setIsCameraAvailable(available);
-      })
-      .catch(() => {
-        if (isMounted) setIsCameraAvailable(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   useEffect(() => {
     let isActive = true;
@@ -270,9 +252,14 @@ export default function TodayScreen() {
   };
 
   const openTemplateModal = async () => {
-    setIsTemplateModalVisible(true);
+    setIsAddModalVisible(false);
     setIsLoadingTemplates(true);
     setError(null);
+
+    setTimeout(() => {
+      setIsTemplateModalVisible(true);
+    }, 250);
+
     try {
       const data = await templatesService.listTemplates('recent');
       setTemplates(data);
@@ -299,6 +286,19 @@ export default function TodayScreen() {
     handleSelectFood(food);
     setFoods([food]);
     setError(null);
+    setIsAddModalVisible(true);
+  };
+
+  const closeScannerModal = () => {
+    setIsScannerVisible(false);
+    setIsAddModalVisible(true);
+  };
+
+  const openScannerModal = () => {
+    setIsAddModalVisible(false);
+    setTimeout(() => {
+      setIsScannerVisible(true);
+    }, 250);
   };
 
   const calculatedEnergy = selectedFood && quantity
@@ -785,15 +785,13 @@ export default function TodayScreen() {
                 <FontAwesome name="file-text-o" size={22} color={colors.textSecondary} />
               </TouchableOpacity>
 
-              {isCameraAvailable && (
-                <TouchableOpacity
-                  style={styles.qrButton}
-                  onPress={() => setIsScannerVisible(true)}
-                >
-                  <Text style={styles.qrButtonText}>Escanear QR</Text>
-                  <FontAwesome name="qrcode" size={22} color={colors.textSecondary} />
-                </TouchableOpacity>
-              )}
+              <TouchableOpacity
+                style={styles.qrButton}
+                onPress={openScannerModal}
+              >
+                <Text style={styles.qrButtonText}>Escanear QR</Text>
+                <FontAwesome name="qrcode" size={22} color={colors.textSecondary} />
+              </TouchableOpacity>
 
               <Button
                 title="Añadir"
@@ -816,7 +814,7 @@ export default function TodayScreen() {
 
       <FoodScannerModal
         visible={isScannerVisible}
-        onClose={() => setIsScannerVisible(false)}
+        onClose={closeScannerModal}
         onFoodScanned={handleScannedFood}
       />
 
