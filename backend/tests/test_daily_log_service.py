@@ -5,6 +5,8 @@ from fastapi import HTTPException
 
 from app.models.alimento import Alimento
 from app.models.registro import Registro
+from app.models.tipo_comida_usuario import TipoComidaUsuario
+from app.models.usuario import Usuario
 from app.schemas.daily_log import FoodScanRequest
 from app.services import daily_log
 from app.services.daily_log import calculate_entry
@@ -48,6 +50,64 @@ def test_calculate_entry_scales_nutrients_by_quantity() -> None:
     assert response.proteinas == 5.27
     assert response.carbohidratos == 54.6
     assert response.grasas == 0.58
+
+
+class FakeMealTypeSession:
+    def __init__(self) -> None:
+        self.added: list[TipoComidaUsuario] = []
+        self.deleted: list[TipoComidaUsuario] = []
+        self.committed = False
+        self.flushed = False
+
+    def delete(self, item: TipoComidaUsuario) -> None:
+        self.deleted.append(item)
+
+    def flush(self) -> None:
+        self.flushed = True
+
+    def add(self, item: TipoComidaUsuario) -> None:
+        item.id = uuid4()
+        self.added.append(item)
+
+    def commit(self) -> None:
+        self.committed = True
+
+    def refresh(self, user: Usuario) -> None:
+        user.tipos_comida = self.added
+
+
+def make_user_with_meal_types(names: list[str] | None = None) -> Usuario:
+    user = Usuario(email="user@example.com", contrasena_hash="hash")
+    user.id = uuid4()
+    user.tipos_comida = []
+    for index, name in enumerate(names or []):
+        meal_type = TipoComidaUsuario(usuario=user, nombre=name, orden=index)
+        meal_type.id = uuid4()
+        user.tipos_comida.append(meal_type)
+    return user
+
+
+def test_replace_meal_types_accepts_single_meal_type() -> None:
+    db = FakeMealTypeSession()
+    user = make_user_with_meal_types(["Desayuno", "Comida", "Cena"])
+
+    response = daily_log.replace_meal_types(db, user, ["Comida"])
+
+    assert db.committed is True
+    assert [item.nombre for item in db.added] == ["Comida"]
+    assert [item.nombre for item in response] == ["Comida"]
+
+
+def test_replace_meal_types_accepts_more_than_three_meal_types() -> None:
+    db = FakeMealTypeSession()
+    user = make_user_with_meal_types(["Desayuno"])
+    names = ["Desayuno", "Media mañana", "Comida", "Merienda", "Cena"]
+
+    response = daily_log.replace_meal_types(db, user, names)
+
+    assert [item.nombre for item in db.added] == names
+    assert [item.orden for item in db.added] == [0, 1, 2, 3, 4]
+    assert [item.nombre for item in response] == names
 
 
 def test_scan_food_returns_existing_food_by_code() -> None:

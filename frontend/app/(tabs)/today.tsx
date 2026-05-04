@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import { FoodScannerModal } from '@/components/FoodScannerModal';
 import { Button } from '@/components/ui/Button';
@@ -120,9 +120,11 @@ export default function TodayScreen() {
     }
   }, [dateKey]);
 
-  useEffect(() => {
-    loadDailyData();
-  }, [loadDailyData]);
+  useFocusEffect(
+    useCallback(() => {
+      loadDailyData();
+    }, [loadDailyData]),
+  );
 
   useEffect(() => {
     let isActive = true;

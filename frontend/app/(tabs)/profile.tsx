@@ -60,6 +60,19 @@ const goalOptions = [
   { value: 'gain', label: 'Ganar peso' },
 ];
 
+const DEFAULT_MEAL_TYPE_NAMES = ['Desayuno', 'Comida', 'Cena'];
+const MEAL_TYPE_PLACEHOLDERS = [
+  'Desayuno',
+  'Media mañana',
+  'Comida',
+  'Merienda',
+  'Cena',
+  'Recena',
+  'Post-entreno',
+  'Snack',
+];
+const MAX_MEAL_TYPES = 8;
+
 function getOptionLabel(
   options: { value: string; label: string }[],
   value: string | null,
@@ -93,7 +106,7 @@ export default function ProfileScreen() {
   const [isSavingMealTypes, setIsSavingMealTypes] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [mealTypes, setMealTypes] = useState<MealType[]>([]);
-  const [mealTypeNames, setMealTypeNames] = useState(['', '', '']);
+  const [mealTypeNames, setMealTypeNames] = useState<string[]>(DEFAULT_MEAL_TYPE_NAMES);
   const [name, setName] = useState('');
   const [gender, setGender] = useState('');
   const [birthDate, setBirthDate] = useState<Date | null>(null);
@@ -139,7 +152,7 @@ export default function ProfileScreen() {
 
   const openMealTypesEdit = () => {
     const names = mealTypes.map((mealType) => mealType.nombre);
-    setMealTypeNames([names[0] ?? '', names[1] ?? '', names[2] ?? '']);
+    setMealTypeNames(names.length > 0 ? names : DEFAULT_MEAL_TYPE_NAMES);
     setErrors({});
     setIsMealTypesModalVisible(true);
   };
@@ -152,6 +165,15 @@ export default function ProfileScreen() {
     const names = mealTypeNames.map((item) => item.trim()).filter(Boolean);
     if (names.length === 0) {
       setErrors({ form: 'Añade al menos un tipo de comida' });
+      return;
+    }
+    if (names.length > MAX_MEAL_TYPES) {
+      setErrors({ form: `Puedes configurar hasta ${MAX_MEAL_TYPES} comidas` });
+      return;
+    }
+    const normalizedNames = names.map((item) => item.toLowerCase());
+    if (new Set(normalizedNames).size !== normalizedNames.length) {
+      setErrors({ form: 'No repitas nombres de comidas' });
       return;
     }
 
@@ -169,6 +191,37 @@ export default function ProfileScreen() {
     } finally {
       setIsSavingMealTypes(false);
     }
+  };
+
+  const handleMealTypeNameChange = (index: number, value: string) => {
+    setMealTypeNames((currentNames) => {
+      const nextNames = [...currentNames];
+      nextNames[index] = value;
+      return nextNames;
+    });
+    if (errors.form) setErrors({ ...errors, form: undefined });
+  };
+
+  const addMealTypeName = () => {
+    if (mealTypeNames.length >= MAX_MEAL_TYPES) return;
+    setMealTypeNames((currentNames) => [...currentNames, '']);
+    if (errors.form) setErrors({ ...errors, form: undefined });
+  };
+
+  const removeMealTypeName = (index: number) => {
+    if (mealTypeNames.length <= 1) return;
+    setMealTypeNames((currentNames) => currentNames.filter((_, itemIndex) => itemIndex !== index));
+    if (errors.form) setErrors({ ...errors, form: undefined });
+  };
+
+  const moveMealTypeName = (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= mealTypeNames.length) return;
+    setMealTypeNames((currentNames) => {
+      const nextNames = [...currentNames];
+      [nextNames[index], nextNames[targetIndex]] = [nextNames[targetIndex], nextNames[index]];
+      return nextNames;
+    });
   };
 
   const closeEdit = () => {
@@ -487,26 +540,113 @@ export default function ProfileScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Tipos de comida</Text>
+            <Text style={styles.modalTitle}>Configurar comidas</Text>
             <Text style={styles.modalText}>
-              Configura las comidas que aparecerán en la vista diaria.
+              Elige cuántas comidas aparecen en la vista diaria.
             </Text>
 
-            {[0, 1, 2].map((index) => (
-              <View key={index} style={styles.mealTypeInput}>
-                <Input
-                  label={`Comida ${index + 1}`}
-                  placeholder={index === 0 ? 'Desayuno' : index === 1 ? 'Comida' : 'Cena'}
-                  value={mealTypeNames[index]}
-                  onChangeText={(text) => {
-                    const nextNames = [...mealTypeNames];
-                    nextNames[index] = text;
-                    setMealTypeNames(nextNames);
-                    if (errors.form) setErrors({ ...errors, form: undefined });
-                  }}
-                />
-              </View>
-            ))}
+            <View style={styles.mealTypeCounter}>
+              <Text style={styles.mealTypeCounterText}>
+                {mealTypeNames.length}/{MAX_MEAL_TYPES} comidas
+              </Text>
+            </View>
+
+            <ScrollView
+              style={styles.mealTypeList}
+              contentContainerStyle={styles.mealTypeListContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {mealTypeNames.map((mealTypeName, index) => (
+                <View key={`meal-type-${index}`} style={styles.mealTypeRow}>
+                  <View style={styles.mealTypeOrderControls}>
+                    <TouchableOpacity
+                      style={[
+                        styles.mealTypeOrderButton,
+                        index === 0 && styles.mealTypeOrderButtonDisabled,
+                      ]}
+                      onPress={() => moveMealTypeName(index, -1)}
+                      disabled={index === 0}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Subir comida ${index + 1}`}
+                    >
+                      <FontAwesome
+                        name="chevron-up"
+                        size={12}
+                        color={index === 0 ? colors.textLight : colors.textSecondary}
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.mealTypeOrderButton,
+                        index === mealTypeNames.length - 1 && styles.mealTypeOrderButtonDisabled,
+                      ]}
+                      onPress={() => moveMealTypeName(index, 1)}
+                      disabled={index === mealTypeNames.length - 1}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Bajar comida ${index + 1}`}
+                    >
+                      <FontAwesome
+                        name="chevron-down"
+                        size={12}
+                        color={index === mealTypeNames.length - 1 ? colors.textLight : colors.textSecondary}
+                      />
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.mealTypeInput}>
+                    <Input
+                      label={`Comida ${index + 1}`}
+                      placeholder={MEAL_TYPE_PLACEHOLDERS[index] ?? `Comida ${index + 1}`}
+                      value={mealTypeName}
+                      onChangeText={(text) => handleMealTypeNameChange(index, text)}
+                    />
+                  </View>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.mealTypeDeleteButton,
+                      mealTypeNames.length <= 1 && styles.mealTypeDeleteButtonDisabled,
+                    ]}
+                    onPress={() => removeMealTypeName(index)}
+                    disabled={mealTypeNames.length <= 1}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Eliminar comida ${index + 1}`}
+                  >
+                    <FontAwesome
+                      name="trash"
+                      size={15}
+                      color={mealTypeNames.length <= 1 ? colors.textLight : colors.error}
+                    />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+
+            <TouchableOpacity
+              style={[
+                styles.addMealTypeButton,
+                mealTypeNames.length >= MAX_MEAL_TYPES && styles.addMealTypeButtonDisabled,
+              ]}
+              onPress={addMealTypeName}
+              disabled={mealTypeNames.length >= MAX_MEAL_TYPES}
+              accessibilityRole="button"
+              accessibilityLabel="Añadir comida"
+            >
+              <FontAwesome
+                name="plus"
+                size={14}
+                color={mealTypeNames.length >= MAX_MEAL_TYPES ? colors.textLight : colors.primaryDark}
+              />
+              <Text
+                style={[
+                  styles.addMealTypeButtonText,
+                  mealTypeNames.length >= MAX_MEAL_TYPES && styles.addMealTypeButtonTextDisabled,
+                ]}
+              >
+                Añadir comida
+              </Text>
+            </TouchableOpacity>
 
             {errors.form && <Text style={styles.errorText}>{errors.form}</Text>}
 
@@ -892,11 +1032,93 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     lineHeight: 22,
   },
   mealTypeInput: {
+    flex: 1,
     width: '100%',
+  },
+  mealTypeCounter: {
+    alignSelf: 'center',
+    backgroundColor: colors.primaryMuted,
+    borderRadius: 999,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
     marginBottom: 16,
   },
+  mealTypeCounterText: {
+    color: colors.primaryDark,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  mealTypeList: {
+    width: '100%',
+    maxHeight: 360,
+  },
+  mealTypeListContent: {
+    gap: 12,
+    paddingBottom: 4,
+  },
+  mealTypeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    width: '100%',
+  },
+  mealTypeOrderControls: {
+    gap: 6,
+    paddingTop: 22,
+  },
+  mealTypeOrderButton: {
+    width: 30,
+    height: 28,
+    borderRadius: 10,
+    backgroundColor: colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mealTypeOrderButtonDisabled: {
+    opacity: 0.45,
+  },
+  mealTypeDeleteButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 14,
+    backgroundColor: colors.errorLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 22,
+  },
+  mealTypeDeleteButtonDisabled: {
+    backgroundColor: colors.backgroundSecondary,
+    opacity: 0.55,
+  },
+  addMealTypeButton: {
+    width: '100%',
+    minHeight: 48,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryMuted,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 14,
+  },
+  addMealTypeButtonDisabled: {
+    borderColor: colors.border,
+    backgroundColor: colors.backgroundSecondary,
+  },
+  addMealTypeButtonText: {
+    color: colors.primaryDark,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  addMealTypeButtonTextDisabled: {
+    color: colors.textLight,
+  },
   mealTypeActions: {
-    marginTop: 8,
+    marginTop: 16,
   },
   modalButtons: {
     flexDirection: 'row',
