@@ -36,6 +36,10 @@ const unitOptions = [
   { value: 'ml', label: 'Mililitros' },
 ];
 
+type AddFlowStep = 'choose' | 'search' | 'confirm' | 'templates';
+
+const quickQuantities = ['50', '100', '150', '200'];
+
 function formatDate(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -74,7 +78,7 @@ export default function TodayScreen() {
   const [isScannerVisible, setIsScannerVisible] = useState(false);
   const [isAnalysisModalVisible, setIsAnalysisModalVisible] = useState(false);
   const [isRecommendationModalVisible, setIsRecommendationModalVisible] = useState(false);
-  const [isTemplateModalVisible, setIsTemplateModalVisible] = useState(false);
+  const [addFlowStep, setAddFlowStep] = useState<AddFlowStep>('choose');
   const [selectedMealType, setSelectedMealType] = useState('');
   const [query, setQuery] = useState('');
   const [foods, setFoods] = useState<Food[]>([]);
@@ -123,7 +127,7 @@ export default function TodayScreen() {
   useEffect(() => {
     let isActive = true;
     const timer = setTimeout(async () => {
-      if (!isAddModalVisible) return;
+      if (!isAddModalVisible || addFlowStep !== 'search') return;
       setIsSearching(true);
       try {
         const results = await dailyLogService.searchFoods(query);
@@ -139,11 +143,12 @@ export default function TodayScreen() {
       isActive = false;
       clearTimeout(timer);
     };
-  }, [query, isAddModalVisible]);
+  }, [query, isAddModalVisible, addFlowStep]);
 
   const openAddModal = (mealType?: string) => {
     const fallbackMealType = mealType ?? dailyLog?.meal_types[0] ?? 'Desayuno';
     setSelectedMealType(fallbackMealType);
+    setAddFlowStep('choose');
     setQuery('');
     setFoods([]);
     setSelectedFood(null);
@@ -252,14 +257,9 @@ export default function TodayScreen() {
   };
 
   const openTemplateModal = async () => {
-    setIsAddModalVisible(false);
+    setAddFlowStep('templates');
     setIsLoadingTemplates(true);
     setError(null);
-
-    setTimeout(() => {
-      setIsTemplateModalVisible(true);
-    }, 250);
-
     try {
       const data = await templatesService.listTemplates('recent');
       setTemplates(data);
@@ -271,27 +271,29 @@ export default function TodayScreen() {
     }
   };
 
-  const closeTemplateModal = () => {
-    setIsTemplateModalVisible(false);
-  };
-
   const handleSelectFood = (food: Food) => {
     setSelectedFood(food);
     setQuery(food.nombre);
     setUnit(food.unidad_base);
     setQuantity('100');
+    setAddFlowStep('confirm');
+    setError(null);
   };
 
   const handleScannedFood = (food: Food) => {
     handleSelectFood(food);
     setFoods([food]);
     setError(null);
+    setIsScannerVisible(false);
     setIsAddModalVisible(true);
   };
 
   const closeScannerModal = () => {
     setIsScannerVisible(false);
     setIsAddModalVisible(true);
+    if (!selectedFood) {
+      setAddFlowStep('choose');
+    }
   };
 
   const openScannerModal = () => {
@@ -301,8 +303,28 @@ export default function TodayScreen() {
     }, 250);
   };
 
+  const openSearchStep = () => {
+    setAddFlowStep('search');
+    setError(null);
+  };
+
+  const backToChooseStep = () => {
+    setAddFlowStep('choose');
+    setSelectedFood(null);
+    setError(null);
+  };
+
   const calculatedEnergy = selectedFood && quantity
     ? round((selectedFood.calorias * Number(quantity)) / 100)
+    : 0;
+  const calculatedProtein = selectedFood && quantity
+    ? round((selectedFood.proteinas * Number(quantity)) / 100)
+    : 0;
+  const calculatedCarbs = selectedFood && quantity
+    ? round((selectedFood.carbohidratos * Number(quantity)) / 100)
+    : 0;
+  const calculatedFat = selectedFood && quantity
+    ? round((selectedFood.grasas * Number(quantity)) / 100)
     : 0;
 
   const handleAddEntry = async () => {
@@ -348,7 +370,6 @@ export default function TodayScreen() {
         template_id: template.id,
       });
       setDailyLog(updatedLog);
-      setIsTemplateModalVisible(false);
       setIsAddModalVisible(false);
     } catch (caughtError) {
       if (caughtError instanceof ApiError) {
@@ -362,7 +383,6 @@ export default function TodayScreen() {
   };
 
   const goToTemplates = () => {
-    setIsTemplateModalVisible(false);
     setIsAddModalVisible(false);
     router.push('/(tabs)/templates');
   };
@@ -448,6 +468,14 @@ export default function TodayScreen() {
     value: mealType,
     label: mealType,
   }));
+  const addModalTitle = addFlowStep === 'confirm'
+    ? `Confirmar ${selectedMealType}`
+    : addFlowStep === 'templates'
+      ? 'Elegir plantilla'
+      : `Añadir a ${selectedMealType}`;
+  const selectedFoodOrigin = [selectedFood?.marca, selectedFood?.supermercado]
+    .filter(Boolean)
+    .join(' · ');
 
   const caloriesGoal = profile?.calorias_diarias ?? 1700;
   const proteinGoal = profile?.peso ? profile.peso * 1.2 : 79;
@@ -703,110 +731,307 @@ export default function TodayScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Añadir comida</Text>
+            <View style={styles.addModalHeader}>
+              {addFlowStep !== 'choose' ? (
+                <TouchableOpacity
+                  style={styles.addBackButton}
+                  onPress={backToChooseStep}
+                  accessibilityRole="button"
+                  accessibilityLabel="Volver a opciones de añadir"
+                >
+                  <FontAwesome name="arrow-left" size={16} color={colors.text} />
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.addBackButtonPlaceholder} />
+              )}
+              <Text style={styles.addModalTitle}>{addModalTitle}</Text>
+              <TouchableOpacity
+                style={styles.addCloseButton}
+                onPress={closeAddModal}
+                accessibilityRole="button"
+                accessibilityLabel="Cerrar añadir alimento"
+              >
+                <FontAwesome name="times" size={16} color={colors.text} />
+              </TouchableOpacity>
+            </View>
 
             <ScrollView
               contentContainerStyle={styles.modalScrollContent}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
             >
-              <Select
-                label="Tipo de comida"
-                placeholder="Selecciona tipo"
-                value={selectedMealType}
-                onSelect={setSelectedMealType}
-                options={mealTypeOptions}
-              />
-
-              <Input
-                label="Buscar alimento"
-                placeholder="Arroz"
-                value={query}
-                onChangeText={(text) => {
-                  setQuery(text);
-                  setSelectedFood(null);
-                }}
-                icon="search"
-              />
-
-              <View style={styles.resultsBox}>
-                {isSearching ? (
-                  <ActivityIndicator color={colors.primary} />
-                ) : foods.length > 0 ? (
-                  foods.map((food) => (
+              {mealTypeOptions.length > 1 && (
+                <View style={styles.mealTypeChips}>
+                  {mealTypeOptions.map((option) => (
                     <TouchableOpacity
-                      key={food.id}
+                      key={option.value}
                       style={[
-                        styles.foodResult,
-                        selectedFood?.id === food.id && styles.foodResultSelected,
+                        styles.mealTypeChip,
+                        selectedMealType === option.value && styles.mealTypeChipSelected,
                       ]}
-                      onPress={() => handleSelectFood(food)}
+                      onPress={() => setSelectedMealType(option.value)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Añadir a ${option.label}`}
                     >
-                      <Text style={styles.foodName}>{food.nombre}</Text>
-                      <Text style={styles.foodMeta}>
-                        {food.calorias} Kcal / 100{food.unidad_base}
+                      <Text
+                        style={[
+                          styles.mealTypeChipText,
+                          selectedMealType === option.value && styles.mealTypeChipTextSelected,
+                        ]}
+                      >
+                        {option.label}
                       </Text>
                     </TouchableOpacity>
-                  ))
-                ) : (
-                  <Text style={styles.emptyResultsText}>Busca un alimento</Text>
-                )}
-              </View>
+                  ))}
+                </View>
+              )}
 
-              <NumberInput
-                label="Cantidad"
-                placeholder="0"
-                value={quantity}
-                onChangeText={setQuantity}
-                unit={unit}
-                keyboardType="decimal-pad"
-              />
+              {addFlowStep === 'choose' && (
+                <>
+                  <Text style={styles.addIntroText}>Elige una forma de registrar la comida.</Text>
+                  <TouchableOpacity
+                    style={[styles.addMethodCard, styles.addMethodCardPrimary]}
+                    onPress={openSearchStep}
+                    accessibilityRole="button"
+                    accessibilityLabel="Buscar alimento"
+                  >
+                    <View style={styles.addMethodIcon}>
+                      <FontAwesome name="search" size={20} color={colors.textWhite} />
+                    </View>
+                    <View style={styles.addMethodTextGroup}>
+                      <Text style={styles.addMethodTitle}>Buscar alimento</Text>
+                      <Text style={styles.addMethodText}>Arroz, yogur, pollo...</Text>
+                    </View>
+                    <FontAwesome name="chevron-right" size={16} color={colors.textLight} />
+                  </TouchableOpacity>
 
-              <Select
-                label="Unidad"
-                placeholder="Selecciona unidad"
-                value={unit}
-                onSelect={(value) => setUnit(value as 'g' | 'ml')}
-                options={unitOptions}
-              />
+                  <TouchableOpacity
+                    style={styles.addMethodCard}
+                    onPress={openScannerModal}
+                    accessibilityRole="button"
+                    accessibilityLabel="Escanear código"
+                  >
+                    <View style={[styles.addMethodIcon, styles.addMethodIconSecondary]}>
+                      <FontAwesome name="qrcode" size={20} color={colors.primaryDark} />
+                    </View>
+                    <View style={styles.addMethodTextGroup}>
+                      <Text style={styles.addMethodTitle}>Escanear código</Text>
+                      <Text style={styles.addMethodText}>Usa el código del producto.</Text>
+                    </View>
+                    <FontAwesome name="chevron-right" size={16} color={colors.textLight} />
+                  </TouchableOpacity>
 
-              <View style={styles.energyRow}>
-                <Text style={styles.energyLabel}>Energía</Text>
-                <Text style={styles.energyValue}>{calculatedEnergy} Kcal</Text>
-              </View>
+                  <TouchableOpacity
+                    style={styles.addMethodCard}
+                    onPress={openTemplateModal}
+                    accessibilityRole="button"
+                    accessibilityLabel="Usar plantilla"
+                  >
+                    <View style={[styles.addMethodIcon, styles.addMethodIconSecondary]}>
+                      <FontAwesome name="file-text-o" size={20} color={colors.primaryDark} />
+                    </View>
+                    <View style={styles.addMethodTextGroup}>
+                      <Text style={styles.addMethodTitle}>Usar plantilla</Text>
+                      <Text style={styles.addMethodText}>Añade una comida ya guardada.</Text>
+                    </View>
+                    <FontAwesome name="chevron-right" size={16} color={colors.textLight} />
+                  </TouchableOpacity>
+                </>
+              )}
 
-              {error && <Text style={styles.errorText}>{error}</Text>}
+              {addFlowStep === 'search' && (
+                <>
+                  <Input
+                    label="Buscar alimento"
+                    placeholder="Busca arroz, yogur, pollo..."
+                    value={query}
+                    onChangeText={(text) => {
+                      setQuery(text);
+                      setSelectedFood(null);
+                    }}
+                    icon="search"
+                  />
 
-              <TouchableOpacity
-                style={styles.templateButton}
-                onPress={openTemplateModal}
-              >
-                <Text style={styles.templateButtonText}>Anadir desde plantilla</Text>
-                <FontAwesome name="file-text-o" size={22} color={colors.textSecondary} />
-              </TouchableOpacity>
+                  <View style={styles.resultsBox}>
+                    {isSearching ? (
+                      <ActivityIndicator color={colors.primary} />
+                    ) : foods.length > 0 ? (
+                      foods.map((food) => {
+                        const foodOrigin = [food.marca, food.supermercado].filter(Boolean).join(' · ');
+                        return (
+                          <TouchableOpacity
+                            key={food.id}
+                            style={styles.foodResult}
+                            onPress={() => handleSelectFood(food)}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Seleccionar ${food.nombre}`}
+                          >
+                            <View style={styles.foodResultTextGroup}>
+                              <Text style={styles.foodName}>{food.nombre}</Text>
+                              {foodOrigin ? (
+                                <Text style={styles.foodOrigin}>{foodOrigin}</Text>
+                              ) : null}
+                              <Text style={styles.foodMeta}>
+                                {food.calorias} Kcal / 100{food.unidad_base}
+                              </Text>
+                            </View>
+                            <FontAwesome name="chevron-right" size={14} color={colors.textLight} />
+                          </TouchableOpacity>
+                        );
+                      })
+                    ) : (
+                      <View style={styles.emptyResultsBox}>
+                        <FontAwesome name="search" size={22} color={colors.textLight} />
+                        <Text style={styles.emptyResultsText}>
+                          {query.trim()
+                            ? 'No encontramos ese alimento. Prueba otra palabra o escanea el código.'
+                            : 'Busca un alimento o escanea el código del producto.'}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
 
-              <TouchableOpacity
-                style={styles.qrButton}
-                onPress={openScannerModal}
-              >
-                <Text style={styles.qrButtonText}>Escanear QR</Text>
-                <FontAwesome name="qrcode" size={22} color={colors.textSecondary} />
-              </TouchableOpacity>
+                  <TouchableOpacity style={styles.secondaryInlineButton} onPress={openScannerModal}>
+                    <FontAwesome name="qrcode" size={18} color={colors.primaryDark} />
+                    <Text style={styles.secondaryInlineButtonText}>Escanear código</Text>
+                  </TouchableOpacity>
+                </>
+              )}
 
-              <Button
-                title="Añadir"
-                onPress={handleAddEntry}
-                loading={isSaving}
-                size="large"
-                style={styles.modalActionButton}
-              />
-              <Button
-                title="Cancelar"
-                onPress={closeAddModal}
-                variant="secondary"
-                size="large"
-                style={styles.modalActionButton}
-              />
+              {addFlowStep === 'confirm' && selectedFood && (
+                <>
+                  <View style={styles.selectedFoodCard}>
+                    <Text style={styles.selectedFoodName}>{selectedFood.nombre}</Text>
+                    {selectedFoodOrigin ? (
+                      <Text style={styles.selectedFoodOrigin}>{selectedFoodOrigin}</Text>
+                    ) : null}
+                    <Text style={styles.selectedFoodMeta}>
+                      Base: {selectedFood.calorias} Kcal / 100{selectedFood.unidad_base}
+                    </Text>
+                  </View>
+
+                  <View style={styles.quickQuantityRow}>
+                    {quickQuantities.map((item) => (
+                      <TouchableOpacity
+                        key={item}
+                        style={[
+                          styles.quickQuantityChip,
+                          quantity === item && styles.quickQuantityChipSelected,
+                        ]}
+                        onPress={() => setQuantity(item)}
+                      >
+                        <Text
+                          style={[
+                            styles.quickQuantityText,
+                            quantity === item && styles.quickQuantityTextSelected,
+                          ]}
+                        >
+                          {item}{unit}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  <NumberInput
+                    label="Cantidad"
+                    placeholder="100"
+                    value={quantity}
+                    onChangeText={setQuantity}
+                    unit={unit}
+                    keyboardType="decimal-pad"
+                  />
+
+                  <View style={styles.unitToggle}>
+                    {unitOptions.map((option) => (
+                      <TouchableOpacity
+                        key={option.value}
+                        style={[
+                          styles.unitToggleItem,
+                          unit === option.value && styles.unitToggleItemSelected,
+                        ]}
+                        onPress={() => setUnit(option.value as 'g' | 'ml')}
+                      >
+                        <Text
+                          style={[
+                            styles.unitToggleText,
+                            unit === option.value && styles.unitToggleTextSelected,
+                          ]}
+                        >
+                          {option.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  <View style={styles.nutritionSummary}>
+                    <View style={styles.nutritionSummaryMain}>
+                      <Text style={styles.nutritionSummaryLabel}>Energía</Text>
+                      <Text style={styles.nutritionSummaryValue}>{calculatedEnergy} Kcal</Text>
+                    </View>
+                    <View style={styles.nutritionMacroRow}>
+                      <Text style={styles.nutritionMacro}>{calculatedProtein}g Prot</Text>
+                      <Text style={styles.nutritionMacro}>{calculatedCarbs}g Carb</Text>
+                      <Text style={styles.nutritionMacro}>{calculatedFat}g Grasas</Text>
+                    </View>
+                  </View>
+
+                  {error && <Text style={styles.errorText}>{error}</Text>}
+
+                  <Button
+                    title={`Añadir a ${selectedMealType}`}
+                    onPress={handleAddEntry}
+                    loading={isSaving}
+                    size="large"
+                    style={styles.modalActionButton}
+                  />
+                </>
+              )}
+
+              {addFlowStep === 'templates' && (
+                <>
+                  {isLoadingTemplates ? (
+                    <View style={styles.templateLoadingBox}>
+                      <ActivityIndicator color={colors.primary} />
+                    </View>
+                  ) : templates.length > 0 ? (
+                    <View style={styles.templatePickerContent}>
+                      {templates.map((template) => (
+                        <TouchableOpacity
+                          key={template.id}
+                          style={styles.templatePickerItem}
+                          onPress={() => handleApplyTemplate(template)}
+                          disabled={isSaving}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Usar plantilla ${template.nombre}`}
+                        >
+                          <View style={styles.templatePickerTextGroup}>
+                            <Text style={styles.templatePickerName}>{template.nombre}</Text>
+                            <Text style={styles.templatePickerMeta}>
+                              {template.items.length} alimentos · {round(template.calorias)} Kcal
+                            </Text>
+                          </View>
+                          <FontAwesome name="chevron-right" size={16} color={colors.textLight} />
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  ) : (
+                    <View style={styles.emptyTemplatePicker}>
+                      <FontAwesome name="folder-open" size={42} color={colors.border} />
+                      <Text style={styles.emptyTemplateTitle}>No hay plantillas</Text>
+                      <Text style={styles.emptyTemplateText}>
+                        Crea una plantilla para añadir comidas completas desde aquí.
+                      </Text>
+                      <Button
+                        title="Crear plantilla"
+                        onPress={goToTemplates}
+                        size="large"
+                        style={styles.modalActionButton}
+                      />
+                    </View>
+                  )}
+                  {error && <Text style={styles.errorText}>{error}</Text>}
+                </>
+              )}
             </ScrollView>
           </View>
         </View>
@@ -946,81 +1171,6 @@ export default function TodayScreen() {
                 style={styles.modalActionButton}
               />
             </ScrollView>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal
-        visible={isTemplateModalVisible}
-        transparent
-        animationType="none"
-        onRequestClose={closeTemplateModal}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Elegir plantilla</Text>
-
-            {isLoadingTemplates ? (
-              <View style={styles.templateLoadingBox}>
-                <ActivityIndicator color={colors.primary} />
-              </View>
-            ) : templates.length > 0 ? (
-              <ScrollView
-                contentContainerStyle={styles.templatePickerContent}
-                showsVerticalScrollIndicator={false}
-              >
-                {templates.map((template) => (
-                  <TouchableOpacity
-                    key={template.id}
-                    style={styles.templatePickerItem}
-                    onPress={() => handleApplyTemplate(template)}
-                    disabled={isSaving}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Usar plantilla ${template.nombre}`}
-                  >
-                    <View style={styles.templatePickerTextGroup}>
-                      <Text style={styles.templatePickerName}>{template.nombre}</Text>
-                      <Text style={styles.templatePickerMeta}>
-                        {template.items.length} alimentos - {round(template.calorias)} Kcal
-                      </Text>
-                    </View>
-                    <FontAwesome name="chevron-right" size={16} color={colors.textLight} />
-                  </TouchableOpacity>
-                ))}
-
-                {error && <Text style={styles.errorText}>{error}</Text>}
-
-                <Button
-                  title="Cancelar"
-                  onPress={closeTemplateModal}
-                  variant="secondary"
-                  size="large"
-                  style={styles.modalActionButton}
-                />
-              </ScrollView>
-            ) : (
-              <View style={styles.emptyTemplatePicker}>
-                <FontAwesome name="folder-open" size={48} color={colors.border} />
-                <Text style={styles.emptyTemplateTitle}>No hay plantillas</Text>
-                <Text style={styles.emptyTemplateText}>
-                  Crea una plantilla para anadir comidas completas desde aqui
-                </Text>
-                {error && <Text style={styles.errorText}>{error}</Text>}
-                <Button
-                  title="Crear plantilla"
-                  onPress={goToTemplates}
-                  size="large"
-                  style={styles.modalActionButton}
-                />
-                <Button
-                  title="Cancelar"
-                  onPress={closeTemplateModal}
-                  variant="secondary"
-                  size="large"
-                  style={styles.modalActionButton}
-                />
-              </View>
-            )}
           </View>
         </View>
       </Modal>
@@ -1354,6 +1504,110 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     gap: 16,
     paddingBottom: 4,
   },
+  addModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    marginBottom: 18,
+  },
+  addModalTitle: {
+    flex: 1,
+    fontSize: 22,
+    fontWeight: '800',
+    color: colors.text,
+    textAlign: 'center',
+  },
+  addBackButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.backgroundSecondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addBackButtonPlaceholder: {
+    width: 38,
+    height: 38,
+  },
+  addCloseButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.backgroundSecondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mealTypeChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  mealTypeChip: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    backgroundColor: colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  mealTypeChipSelected: {
+    backgroundColor: colors.primaryMuted,
+    borderColor: colors.primary,
+  },
+  mealTypeChipText: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  mealTypeChipTextSelected: {
+    color: colors.primaryDark,
+  },
+  addIntroText: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 20,
+  },
+  addMethodCard: {
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    borderRadius: 16,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: colors.backgroundCard,
+  },
+  addMethodCardPrimary: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryMuted,
+  },
+  addMethodIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: colors.primaryDark,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addMethodIconSecondary: {
+    backgroundColor: colors.primaryMuted,
+  },
+  addMethodTextGroup: {
+    flex: 1,
+  },
+  addMethodTitle: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 3,
+  },
+  addMethodText: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '600',
+  },
   resultsBox: {
     minHeight: 120,
     borderWidth: 1,
@@ -1363,10 +1617,16 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   foodResult: {
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 14,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderLight,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  foodResultTextGroup: {
+    flex: 1,
   },
   foodResultSelected: {
     backgroundColor: colors.primaryMuted,
@@ -1376,16 +1636,160 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
+  foodOrigin: {
+    color: colors.primaryDark,
+    fontSize: 12,
+    fontWeight: '800',
+    marginTop: 3,
+  },
   foodMeta: {
     color: colors.textSecondary,
     fontSize: 12,
     fontWeight: '500',
     marginTop: 2,
   },
+  emptyResultsBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    padding: 18,
+  },
   emptyResultsText: {
     color: colors.textLight,
     fontSize: 14,
     fontWeight: '600',
+    textAlign: 'center',
+  },
+  secondaryInlineButton: {
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+  },
+  secondaryInlineButtonText: {
+    color: colors.primaryDark,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  selectedFoodCard: {
+    borderRadius: 16,
+    padding: 16,
+    backgroundColor: colors.primaryMuted,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  selectedFoodName: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: '900',
+    marginBottom: 4,
+  },
+  selectedFoodOrigin: {
+    color: colors.primaryDark,
+    fontSize: 13,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  selectedFoodMeta: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  quickQuantityRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  quickQuantityChip: {
+    flex: 1,
+    minHeight: 42,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.backgroundSecondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickQuantityChipSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryMuted,
+  },
+  quickQuantityText: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  quickQuantityTextSelected: {
+    color: colors.primaryDark,
+  },
+  unitToggle: {
+    flexDirection: 'row',
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: 14,
+    padding: 4,
+    gap: 4,
+  },
+  unitToggleItem: {
+    flex: 1,
+    minHeight: 42,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  unitToggleItemSelected: {
+    backgroundColor: colors.backgroundCard,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  unitToggleText: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  unitToggleTextSelected: {
+    color: colors.text,
+  },
+  nutritionSummary: {
+    borderRadius: 16,
+    backgroundColor: colors.backgroundSecondary,
+    padding: 14,
+    gap: 12,
+  },
+  nutritionSummaryMain: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  nutritionSummaryLabel: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  nutritionSummaryValue: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  nutritionMacroRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  nutritionMacro: {
+    flex: 1,
+    color: colors.textSecondary,
+    backgroundColor: colors.backgroundCard,
+    borderRadius: 10,
+    paddingVertical: 8,
+    fontSize: 12,
+    fontWeight: '800',
     textAlign: 'center',
   },
   energyRow: {

@@ -58,7 +58,6 @@ export function FoodScannerModal({
     try {
       const food = await dailyLogService.scanFood(result.data);
       onFoodScanned(food);
-      onClose();
     } catch (caughtError) {
       if (caughtError instanceof ApiError) {
         setError(caughtError.detail);

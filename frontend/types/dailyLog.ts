@@ -7,6 +7,9 @@ export interface Food {
   grasas: number;
   unidad_base: 'g' | 'ml';
   codigo_qr: string | null;
+  marca?: string | null;
+  supermercado?: string | null;
+  fuente?: string | null;
 }
 
 export interface MealType {
