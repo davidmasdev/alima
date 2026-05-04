@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -27,7 +27,7 @@ import { dailyLogService } from '@/services/dailyLog';
 import { profileService } from '@/services/profile';
 import { recommendationsService } from '@/services/recommendations';
 import { templatesService } from '@/services/templates';
-import { errorFeedback, mediumImpact, successFeedback } from '@/services/haptics';
+import { errorFeedback, lightImpact, mediumImpact, successFeedback } from '@/services/haptics';
 import type { AnalysisResponse } from '@/types/analysis';
 import type { DailyEntry, DailyLog, Food, MealLog } from '@/types/dailyLog';
 import type { Profile } from '@/types/profile';
@@ -73,10 +73,12 @@ export default function TodayScreen() {
   const styles = createStyles(colors);
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [dateTransitionDirection, setDateTransitionDirection] = useState(1);
   const [dailyLog, setDailyLog] = useState<DailyLog | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [templates, setTemplates] = useState<MealTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshingDay, setIsRefreshingDay] = useState(false);
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
   const [isScannerVisible, setIsScannerVisible] = useState(false);
   const [isAnalysisModalVisible, setIsAnalysisModalVisible] = useState(false);
@@ -103,11 +105,17 @@ export default function TodayScreen() {
   const [recommendation, setRecommendation] = useState<RecommendationResponse | null>(null);
   const [recommendationError, setRecommendationError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const hasLoadedDailyDataRef = useRef(false);
 
   const dateKey = useMemo(() => formatDate(selectedDate), [selectedDate]);
+  const dayTransitionKey = dailyLog?.fecha ?? dateKey;
 
   const loadDailyData = useCallback(async () => {
-    setIsLoading(true);
+    if (!hasLoadedDailyDataRef.current) {
+      setIsLoading(true);
+    } else {
+      setIsRefreshingDay(true);
+    }
     setError(null);
     try {
       const [log, profileData] = await Promise.all([
@@ -120,6 +128,8 @@ export default function TodayScreen() {
       setError('No se pudo cargar el diario');
     } finally {
       setIsLoading(false);
+      setIsRefreshingDay(false);
+      hasLoadedDailyDataRef.current = true;
     }
   }, [dateKey]);
 
@@ -165,6 +175,12 @@ export default function TodayScreen() {
 
   const closeAddModal = () => {
     setIsAddModalVisible(false);
+  };
+
+  const changeSelectedDate = (direction: -1 | 1) => {
+    setDateTransitionDirection(direction);
+    lightImpact();
+    setSelectedDate((currentDate) => addDays(currentDate, direction));
   };
 
   const openAnalysisModal = () => {
@@ -567,47 +583,58 @@ export default function TodayScreen() {
           <>
             {error && <Text style={styles.errorText}>{error}</Text>}
 
-            <View style={styles.summaryCard}>
-              <View style={styles.calorieRing}>
-                <Text style={styles.calorieValue}>{Math.round(totals.calorias)}</Text>
-                <Text style={styles.calorieGoal}>/{Math.round(caloriesGoal)}</Text>
-              </View>
-              <View style={styles.macroList}>
-                <View style={styles.macroItem}>
-                  <Text style={styles.macroLabel}>Carbohidratos</Text>
-                  <View style={styles.macroBarTrack}>
-                    <View style={[styles.macroBarFill, { width: `${Math.min(100, (totals.carbohidratos / carbGoal) * 100)}%` }]} />
-                  </View>
-                  <Text style={styles.macroValue}>{round(totals.carbohidratos)}/{Math.round(carbGoal)}g</Text>
-                </View>
-                <View style={styles.macroItem}>
-                  <Text style={styles.macroLabel}>Proteínas</Text>
-                  <View style={styles.macroBarTrack}>
-                    <View style={[styles.macroBarFill, styles.proteinFill, { width: `${Math.min(100, (totals.proteinas / proteinGoal) * 100)}%` }]} />
-                  </View>
-                  <Text style={styles.macroValue}>{round(totals.proteinas)}/{Math.round(proteinGoal)}g</Text>
-                </View>
-                <View style={styles.macroItem}>
-                  <Text style={styles.macroLabel}>Grasas</Text>
-                  <View style={styles.macroBarTrack}>
-                    <View style={[styles.macroBarFill, styles.fatFill, { width: `${Math.min(100, (totals.grasas / fatGoal) * 100)}%` }]} />
-                  </View>
-                  <Text style={styles.macroValue}>{round(totals.grasas)}/{Math.round(fatGoal)}g</Text>
-                </View>
-              </View>
-            </View>
-
             <View style={styles.dateNavigator}>
-              <TouchableOpacity onPress={() => setSelectedDate(addDays(selectedDate, -1))}>
+              <TouchableOpacity onPress={() => changeSelectedDate(-1)}>
                 <FontAwesome name="chevron-left" size={18} color={colors.textSecondary} />
               </TouchableOpacity>
-              <Text style={styles.dayText}>{formatDisplayDate(selectedDate)}</Text>
-              <TouchableOpacity onPress={() => setSelectedDate(addDays(selectedDate, 1))}>
+              <View style={styles.dateCenter}>
+                <Text style={styles.dayText}>{formatDisplayDate(selectedDate)}</Text>
+                {isRefreshingDay && <ActivityIndicator size="small" color={colors.primary} />}
+              </View>
+              <TouchableOpacity onPress={() => changeSelectedDate(1)}>
                 <FontAwesome name="chevron-right" size={18} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
-            {meals.map(renderMeal)}
+            <FadeSlideView
+              triggerKey={dayTransitionKey}
+              axis="x"
+              distance={dateTransitionDirection * 18}
+              minimumOpacity={0.78}
+              style={styles.dayContent}
+            >
+              <View style={styles.summaryCard}>
+                <View style={styles.calorieRing}>
+                  <Text style={styles.calorieValue}>{Math.round(totals.calorias)}</Text>
+                  <Text style={styles.calorieGoal}>/{Math.round(caloriesGoal)}</Text>
+                </View>
+                <View style={styles.macroList}>
+                  <View style={styles.macroItem}>
+                    <Text style={styles.macroLabel}>Carbohidratos</Text>
+                    <View style={styles.macroBarTrack}>
+                      <View style={[styles.macroBarFill, { width: `${Math.min(100, (totals.carbohidratos / carbGoal) * 100)}%` }]} />
+                    </View>
+                    <Text style={styles.macroValue}>{round(totals.carbohidratos)}/{Math.round(carbGoal)}g</Text>
+                  </View>
+                  <View style={styles.macroItem}>
+                    <Text style={styles.macroLabel}>Proteínas</Text>
+                    <View style={styles.macroBarTrack}>
+                      <View style={[styles.macroBarFill, styles.proteinFill, { width: `${Math.min(100, (totals.proteinas / proteinGoal) * 100)}%` }]} />
+                    </View>
+                    <Text style={styles.macroValue}>{round(totals.proteinas)}/{Math.round(proteinGoal)}g</Text>
+                  </View>
+                  <View style={styles.macroItem}>
+                    <Text style={styles.macroLabel}>Grasas</Text>
+                    <View style={styles.macroBarTrack}>
+                      <View style={[styles.macroBarFill, styles.fatFill, { width: `${Math.min(100, (totals.grasas / fatGoal) * 100)}%` }]} />
+                    </View>
+                    <Text style={styles.macroValue}>{round(totals.grasas)}/{Math.round(fatGoal)}g</Text>
+                  </View>
+                </View>
+              </View>
+
+              {meals.map(renderMeal)}
+            </FadeSlideView>
 
             <TouchableOpacity
               style={styles.aiButton}
@@ -1274,6 +1301,9 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     textAlign: 'center',
     marginVertical: 8,
   },
+  dayContent: {
+    width: '100%',
+  },
   summaryCard: {
     backgroundColor: colors.backgroundCard,
     borderRadius: 20,
@@ -1347,6 +1377,14 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
     paddingHorizontal: 4,
+  },
+  dateCenter: {
+    minWidth: 150,
+    minHeight: 24,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
   },
   dayText: {
     color: colors.textSecondary,

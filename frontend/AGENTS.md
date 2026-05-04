@@ -12,10 +12,6 @@
 - NO usar LinearGradient en ningún componente
 - Todos los fondos, botones y elementos deben usar colores sólidos de la paleta
 
-### 3. NUNCA usar animaciones de transición de página
-- NO usar animaciones de entrada (fade, slide, scale) al cargar pantallas
-- NO usar Animated.Value, Animated.timing, Animated.spring para transiciones
-- Las animaciones de feedback (press/touch) en inputs sí están permitidas
 
 ## Paleta de Colores
 

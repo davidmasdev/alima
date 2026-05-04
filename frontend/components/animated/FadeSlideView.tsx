@@ -14,6 +14,7 @@ interface FadeSlideViewProps {
   style?: StyleProp<ViewStyle>;
   axis?: 'x' | 'y';
   distance?: number;
+  minimumOpacity?: number;
 }
 
 export function FadeSlideView({
@@ -22,6 +23,7 @@ export function FadeSlideView({
   style,
   axis = 'y',
   distance = 8,
+  minimumOpacity = 0,
 }: FadeSlideViewProps) {
   const reduceMotion = useReducedMotionPreference();
   const progress = useSharedValue(1);
@@ -35,7 +37,7 @@ export function FadeSlideView({
   }, [progress, reduceMotion, triggerKey]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    opacity: progress.value,
+    opacity: minimumOpacity + progress.value * (1 - minimumOpacity),
     transform: [
       axis === 'x'
         ? { translateX: reduceMotion ? 0 : (1 - progress.value) * distance }
