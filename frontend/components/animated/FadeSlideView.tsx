@@ -1,11 +1,12 @@
 import React, { ReactNode, useEffect } from 'react';
 import { StyleProp, ViewStyle } from 'react-native';
 import Animated, {
-  Easing,
   useAnimatedStyle,
   useSharedValue,
+  withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import { iosAnimation } from '@/constants/animations';
 import { useReducedMotionPreference } from '@/hooks/useReducedMotionPreference';
 
 interface FadeSlideViewProps {
@@ -23,17 +24,19 @@ export function FadeSlideView({
   style,
   axis = 'y',
   distance = 8,
-  minimumOpacity = 0,
+  minimumOpacity = 0.92,
 }: FadeSlideViewProps) {
   const reduceMotion = useReducedMotionPreference();
   const progress = useSharedValue(1);
 
   useEffect(() => {
     progress.value = 0;
-    progress.value = withTiming(1, {
-      duration: reduceMotion ? 80 : 160,
-      easing: Easing.out(Easing.cubic),
-    });
+    progress.value = reduceMotion
+      ? withTiming(1, {
+        duration: iosAnimation.reduceMotionMs,
+        easing: iosAnimation.easeOut,
+      })
+      : withSpring(1, iosAnimation.spring);
   }, [progress, reduceMotion, triggerKey]);
 
   const animatedStyle = useAnimatedStyle(() => ({

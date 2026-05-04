@@ -640,7 +640,7 @@ export default function TodayScreen() {
               triggerKey={dayTransitionKey}
               axis="x"
               distance={dateTransitionDirection * 18}
-              minimumOpacity={0.78}
+              minimumOpacity={0.96}
               style={styles.dayContent}
             >
               <View style={styles.summaryCard}>

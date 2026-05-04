@@ -1,11 +1,12 @@
 import React, { ReactNode, useEffect } from 'react';
 import { StyleProp, ViewStyle } from 'react-native';
 import Animated, {
-  Easing,
   useAnimatedStyle,
   useSharedValue,
+  withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import { iosAnimation } from '@/constants/animations';
 import { useReducedMotionPreference } from '@/hooks/useReducedMotionPreference';
 
 interface AnimatedModalContentProps {
@@ -22,20 +23,30 @@ export function AnimatedModalContent({
   slideDistance = 12,
 }: AnimatedModalContentProps) {
   const reduceMotion = useReducedMotionPreference();
-  const progress = useSharedValue(0);
+  const progress = useSharedValue(visible ? 1 : 0);
+  const opacity = useSharedValue(visible ? 1 : 0);
 
   useEffect(() => {
-    progress.value = withTiming(visible ? 1 : 0, {
-      duration: reduceMotion ? 80 : 180,
-      easing: Easing.out(Easing.cubic),
+    progress.value = reduceMotion
+      ? withTiming(visible ? 1 : 0, {
+        duration: iosAnimation.reduceMotionMs,
+        easing: iosAnimation.easeOut,
+      })
+      : withSpring(visible ? 1 : 0, iosAnimation.modalSpring);
+    opacity.value = withTiming(visible ? 1 : 0, {
+      duration: reduceMotion ? iosAnimation.reduceMotionMs : iosAnimation.fadeMs,
+      easing: iosAnimation.easeOut,
     });
-  }, [progress, reduceMotion, visible]);
+  }, [opacity, progress, reduceMotion, visible]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    opacity: progress.value,
+    opacity: opacity.value,
     transform: [
       {
         translateY: reduceMotion ? 0 : (1 - progress.value) * slideDistance,
+      },
+      {
+        scale: reduceMotion ? 1 : 0.97 + progress.value * 0.03,
       },
     ],
   }));

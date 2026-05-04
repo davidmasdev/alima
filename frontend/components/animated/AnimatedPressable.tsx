@@ -7,10 +7,13 @@ import {
   ViewStyle,
 } from 'react-native';
 import Animated, {
+  Easing,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
+  withTiming,
 } from 'react-native-reanimated';
+import { iosAnimation } from '@/constants/animations';
 import { useReducedMotionPreference } from '@/hooks/useReducedMotionPreference';
 
 interface AnimatedPressableProps extends Omit<PressableProps, 'style' | 'children'> {
@@ -21,9 +24,7 @@ interface AnimatedPressableProps extends Omit<PressableProps, 'style' | 'childre
 }
 
 const springConfig = {
-  damping: 18,
-  stiffness: 280,
-  mass: 0.8,
+  ...iosAnimation.spring,
 };
 
 const ReanimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -31,7 +32,7 @@ const ReanimatedPressable = Animated.createAnimatedComponent(Pressable);
 export function AnimatedPressable({
   children,
   style,
-  pressedScale = 0.97,
+  pressedScale = 0.985,
   disabled = false,
   onPressIn,
   onPressOut,
@@ -39,14 +40,23 @@ export function AnimatedPressable({
 }: AnimatedPressableProps) {
   const reduceMotion = useReducedMotionPreference();
   const scale = useSharedValue(1);
+  const opacity = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
     transform: [{ scale: scale.value }],
   }));
 
   const handlePressIn = (event: GestureResponderEvent) => {
     if (!disabled && !reduceMotion) {
-      scale.value = withSpring(pressedScale, springConfig);
+      scale.value = withTiming(pressedScale, {
+        duration: iosAnimation.pressInMs,
+        easing: Easing.out(Easing.quad),
+      });
+      opacity.value = withTiming(0.92, {
+        duration: iosAnimation.pressInMs,
+        easing: Easing.out(Easing.quad),
+      });
     }
     onPressIn?.(event);
   };
@@ -54,6 +64,10 @@ export function AnimatedPressable({
   const handlePressOut = (event: GestureResponderEvent) => {
     if (!disabled && !reduceMotion) {
       scale.value = withSpring(1, springConfig);
+      opacity.value = withTiming(1, {
+        duration: iosAnimation.fadeMs,
+        easing: iosAnimation.easeOut,
+      });
     }
     onPressOut?.(event);
   };

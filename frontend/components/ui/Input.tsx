@@ -52,7 +52,7 @@ export function Input({
   const handleFocus = () => {
     setIsFocused(true);
     Animated.spring(scaleAnim, {
-      toValue: 1.01,
+      toValue: 1,
       useNativeDriver: true,
       friction: 8,
     }).start();
