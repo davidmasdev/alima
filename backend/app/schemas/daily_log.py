@@ -13,6 +13,9 @@ class FoodResponse(BaseModel):
     grasas: float
     unidad_base: str
     codigo_qr: str | None
+    marca: str | None = None
+    supermercado: str | None = None
+    fuente: str | None = None
 
 
 class FoodScanRequest(BaseModel):

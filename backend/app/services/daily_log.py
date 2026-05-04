@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, timezone
 from uuid import UUID
 
 import httpx
@@ -26,7 +26,7 @@ from app.schemas.daily_log import (
 
 DEFAULT_MEAL_TYPES = ["Desayuno", "Comida", "Cena"]
 VALID_UNITS = {"g", "ml"}
-OFF_FIELDS = "product_name,brands,nutriments,nutrition_data_per"
+OFF_FIELDS = "product_name,brands,stores,nutriments,nutrition_data_per"
 
 
 def ensure_default_meal_types(db: Session, user: Usuario) -> list[TipoComidaUsuario]:
@@ -82,22 +82,20 @@ def search_foods(db: Session, query: str | None) -> list[FoodResponse]:
         pattern = f"%{query.strip()}%"
         statement = (
             select(Alimento)
-            .where(or_(Alimento.nombre.ilike(pattern), Alimento.codigo_qr == query.strip()))
+            .where(
+                or_(
+                    Alimento.nombre.ilike(pattern),
+                    Alimento.marca.ilike(pattern),
+                    Alimento.supermercado.ilike(pattern),
+                    Alimento.codigo_qr == query.strip(),
+                )
+            )
             .order_by(func.length(Alimento.nombre), Alimento.nombre)
             .limit(20)
         )
 
     return [
-        FoodResponse(
-            id=food.id,
-            nombre=food.nombre,
-            calorias=food.calorias,
-            proteinas=food.proteinas,
-            carbohidratos=food.carbohidratos,
-            grasas=food.grasas,
-            unidad_base=food.unidad_base,
-            codigo_qr=food.codigo_qr,
-        )
+        build_food_response(food)
         for food in db.scalars(statement).all()
     ]
 
@@ -112,6 +110,9 @@ def build_food_response(food: Alimento) -> FoodResponse:
         grasas=food.grasas,
         unidad_base=food.unidad_base,
         codigo_qr=food.codigo_qr,
+        marca=food.marca,
+        supermercado=food.supermercado,
+        fuente=food.fuente,
     )
 
 
@@ -120,6 +121,24 @@ def normalize_scan_code(code: str) -> str:
     if cleaned.startswith("http://") or cleaned.startswith("https://"):
         cleaned = cleaned.rstrip("/").split("/")[-1]
     return cleaned.strip()
+
+
+def _read_number(value: object) -> float | None:
+    if isinstance(value, int | float):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            return float(value.replace(",", "."))
+        except ValueError:
+            return None
+    return None
+
+
+def _first_csv_value(value: object) -> str | None:
+    if not isinstance(value, str):
+        return None
+    first = next((item.strip() for item in value.split(",") if item.strip()), None)
+    return first[:120] if first else None
 
 
 def parse_open_food_facts_product(code: str, payload: dict[str, object]) -> Alimento:
@@ -143,10 +162,10 @@ def parse_open_food_facts_product(code: str, payload: dict[str, object]) -> Alim
             detail="El producto no contiene información nutricional suficiente",
         )
 
-    calories = nutriments.get("energy-kcal_100g") or nutriments.get("energy-kcal")
-    proteins = nutriments.get("proteins_100g")
-    carbs = nutriments.get("carbohydrates_100g")
-    fats = nutriments.get("fat_100g")
+    calories = _read_number(nutriments.get("energy-kcal_100g") or nutriments.get("energy-kcal"))
+    proteins = _read_number(nutriments.get("proteins_100g"))
+    carbs = _read_number(nutriments.get("carbohydrates_100g"))
+    fats = _read_number(nutriments.get("fat_100g"))
     if calories is None or proteins is None or carbs is None or fats is None:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -154,18 +173,23 @@ def parse_open_food_facts_product(code: str, payload: dict[str, object]) -> Alim
         )
 
     product_name = str(product.get("product_name") or "Producto escaneado").strip()
-    brands = str(product.get("brands") or "").strip()
-    name = f"{brands} {product_name}".strip() if brands else product_name
+    brand = _first_csv_value(product.get("brands"))
+    store = _first_csv_value(product.get("stores"))
+    name = f"{brand} {product_name}".strip() if brand else product_name
     unit = "ml" if str(product.get("nutrition_data_per") or "").lower() == "serving" else "g"
 
     return Alimento(
         nombre=name[:180],
-        calorias=float(calories),
-        proteinas=float(proteins),
-        carbohidratos=float(carbs),
-        grasas=float(fats),
+        calorias=calories,
+        proteinas=proteins,
+        carbohidratos=carbs,
+        grasas=fats,
         unidad_base=unit,
         codigo_qr=code,
+        marca=brand,
+        supermercado=store,
+        fuente="open_food_facts",
+        ultima_sincronizacion=datetime.now(timezone.utc),
     )
 
 

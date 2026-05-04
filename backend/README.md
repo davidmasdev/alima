@@ -26,7 +26,29 @@ alembic upgrade head
 python scripts/seed_foods.py
 ```
 
-6. Start the API:
+6. Optionally import supermarket products from Open Food Facts:
+
+```bash
+python scripts/import_openfoodfacts.py --limit 1000 --page-size 25
+```
+
+You can narrow the import by store or brand:
+
+```bash
+python scripts/import_openfoodfacts.py --stores mercadona,aldi,lidl --limit 500
+python scripts/import_openfoodfacts.py --brands hacendado,milbona --limit 500
+```
+
+By default the importer targets Spanish supermarket store tags. Brand filters are optional
+because combining store and brand filters narrows the result set.
+The script queries the Open Food Facts v2 search API one store or brand at a time and
+retries temporary errors, but 503 responses can still happen during high load. In that
+case, rerun it with a smaller `--page-size` or a narrower `--stores` value.
+
+Open Food Facts data is reused under the Open Database License. Keep attribution in
+project documentation or the product UI when using this catalog.
+
+7. Start the API:
 
 ```bash
 fastapi dev app/main.py

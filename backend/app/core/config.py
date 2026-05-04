@@ -50,6 +50,10 @@ class Settings(BaseSettings):
         default="Alima/1.0 (tfg@example.com)",
         alias="OPEN_FOOD_FACTS_USER_AGENT",
     )
+    open_food_facts_import_delay_seconds: float = Field(
+        default=6.0,
+        alias="OPEN_FOOD_FACTS_IMPORT_DELAY_SECONDS",
+    )
 
     @property
     def cors_origins(self) -> list[str]:
