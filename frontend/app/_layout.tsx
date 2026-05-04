@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Platform, StyleSheet, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ThemeProvider, useAppTheme } from '@/contexts/ThemeContext';
@@ -7,6 +8,7 @@ import { profileService } from '@/services/profile';
 
 function RootNavigator() {
   const { colors, effectiveTheme } = useAppTheme();
+  const styles = createStyles(colors);
 
   useEffect(() => {
     let isMounted = true;
@@ -37,7 +39,8 @@ function RootNavigator() {
   }, []);
 
   return (
-    <>
+    <View style={styles.webRoot}>
+      <View style={styles.webFrame}>
       <StatusBar style={effectiveTheme === 'dark' ? 'light' : 'dark'} />
       <Stack
         screenOptions={{
@@ -49,7 +52,8 @@ function RootNavigator() {
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
       </Stack>
-    </>
+      </View>
+    </View>
   );
 }
 
@@ -60,3 +64,17 @@ export default function RootLayout() {
     </ThemeProvider>
   );
 }
+
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
+  webRoot: {
+    flex: 1,
+    backgroundColor: Platform.OS === 'web' ? colors.disabled : colors.background,
+    alignItems: Platform.OS === 'web' ? 'center' : 'stretch',
+  },
+  webFrame: {
+    flex: 1,
+    width: '100%',
+    maxWidth: Platform.OS === 'web' ? 430 : undefined,
+    backgroundColor: colors.background,
+  },
+});
