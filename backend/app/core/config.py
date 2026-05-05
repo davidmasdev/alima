@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     smtp_from_name: str = Field(default="Alima", alias="SMTP_FROM_NAME")
     ai_provider: str = Field(default="gemini", alias="AI_PROVIDER")
     gemini_api_key: str | None = Field(default=None, alias="GEMINI_API_KEY")
-    gemini_model: str = Field(default="gemini-2.5-flash", alias="GEMINI_MODEL")
+    gemini_model: str = Field(default="gemini-2.5-flash-lite", alias="GEMINI_MODEL")
     ai_request_timeout_seconds: int = Field(default=60, alias="AI_REQUEST_TIMEOUT_SECONDS")
     ai_max_output_tokens: int = Field(default=4096, alias="AI_MAX_OUTPUT_TOKENS")
     ai_thinking_budget: int = Field(default=0, alias="AI_THINKING_BUDGET")
