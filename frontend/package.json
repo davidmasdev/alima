@@ -72,6 +72,7 @@
       "!**/coverage/**",
       "!**/node_modules/**",
       "!**/.expo/**",
+      "!types/**",
       "!expo-env.d.ts"
     ]
   },
