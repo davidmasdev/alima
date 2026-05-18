@@ -1,50 +1,65 @@
-# Welcome to your Expo app 👋
+# Frontend de Alima
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplicación móvil de Alima, hecha con Expo, React Native y TypeScript. Desde aquí el usuario puede registrarse, configurar su perfil nutricional, registrar comidas, crear plantillas, consultar progreso, escanear productos y pedir recomendaciones o análisis con IA.
 
-## Get started
+## Estructura
 
-1. Install dependencies
+- `app`: pantallas y navegación con Expo Router.
+  - `(auth)`: login, registro, verificación de correo, recuperación de contraseña y onboarding.
+  - `(tabs)`: pantallas principales: hoy, plantillas, progreso y perfil.
+- `components`: componentes reutilizables, modal de escaneo y elementos de interfaz.
+- `services`: llamadas a la API y gestión de sesión.
+- `types`: tipos TypeScript de las respuestas y datos principales.
+- `contexts`: contexto de tema claro/oscuro.
+- `constants`: colores y valores compartidos.
+- `assets`: imágenes, iconos y recursos de la app.
+- `__tests__`: pruebas del frontend.
 
-   ```bash
-   npm install
-   ```
+## Configuración
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Instala dependencias:
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Crea el fichero de entorno a partir del ejemplo:
 
-## Learn more
+```bash
+cp .env.example .env
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+Para trabajar en local con el backend:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```env
+EXPO_PUBLIC_API_URL=http://localhost:8000/api
+```
 
-## Join the community
+Las variables de Google OAuth solo hacen falta para probar el inicio de sesión con Google.
 
-Join our community of developers creating universal apps.
+## Arranque
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+npm run start
+```
+
+Desde la terminal de Expo se puede abrir en Expo Go, emulador o navegador. También hay comandos directos:
+
+```bash
+npm run android
+npm run ios
+npm run web
+```
+
+## Comandos útiles
+
+```bash
+npm run test
+npm run lint
+```
+
+Los tests usan Jest y React Native Testing Library. Cubren servicios, componentes reutilizables, pantallas principales y algunos comportamientos por plataforma.
+
+## Conexión con la API
+
+La comunicación con el backend se centraliza en `services/api.ts`. El resto de servicios (`auth`, `profile`, `dailyLog`, `templates`, `progress`, `recommendations` y `analysis`) usan esa base para mantener las rutas y tokens en un solo sitio.

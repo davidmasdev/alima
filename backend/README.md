@@ -1,12 +1,31 @@
-# Alima Backend
+# Backend de Alima
 
-FastAPI backend for the Alima nutrition app.
+Este backend expone la API REST de Alima. Gestiona usuarios, autenticación, perfil nutricional, comidas diarias, plantillas, progreso, escaneo de productos, recomendaciones y análisis con IA.
 
-## Local setup
+Está hecho con FastAPI, SQLAlchemy, PostgreSQL y Alembic.
 
-1. Create a PostgreSQL database named `alima`.
-2. Copy `.env.example` to `.env` and adjust credentials.
-3. Install dependencies:
+## Estructura
+
+- `app/main.py`: crea la aplicación FastAPI y registra las rutas bajo `/api`.
+- `app/api`: endpoints agrupados por funcionalidad.
+- `app/services`: lógica de negocio, cálculos nutricionales, IA, emails e importación de alimentos.
+- `app/models`: modelos SQLAlchemy.
+- `app/schemas`: modelos Pydantic usados en peticiones y respuestas.
+- `app/core`: configuración, JWT y utilidades de seguridad.
+- `app/db`: base declarativa y sesión de base de datos.
+- `alembic`: migraciones.
+- `scripts`: carga inicial e importación desde Open Food Facts.
+- `tests`: pruebas unitarias y de servicios.
+
+## Configuración local
+
+Hace falta tener PostgreSQL instalado y una base de datos, por ejemplo `alima`.
+
+```bash
+cp .env.example .env
+```
+
+En Windows, la instalación habitual es:
 
 ```bash
 python -m venv .venv
@@ -14,52 +33,55 @@ python -m venv .venv
 pip install -e ".[dev]"
 ```
 
-4. Apply migrations:
+Después se aplican las migraciones:
 
 ```bash
 alembic upgrade head
 ```
 
-5. Seed common foods for local testing:
+Para cargar alimentos básicos de prueba:
 
 ```bash
 python scripts/seed_foods.py
 ```
 
-6. Optionally import supermarket products from Open Food Facts:
+También se pueden importar productos desde Open Food Facts:
 
 ```bash
 python scripts/import_openfoodfacts.py --limit 1000 --page-size 25
 ```
 
-You can narrow the import by store or brand:
+Si la importación tarda o falla por carga del servicio, conviene bajar el límite o filtrar:
 
 ```bash
 python scripts/import_openfoodfacts.py --stores mercadona,aldi,lidl --limit 500
 python scripts/import_openfoodfacts.py --brands hacendado,milbona --limit 500
 ```
 
-By default the importer targets Spanish supermarket store tags. Brand filters are optional
-because combining store and brand filters narrows the result set.
-The script queries the Open Food Facts v2 search API one store or brand at a time and
-retries temporary errors, but 503 responses can still happen during high load. In that
-case, rerun it with a smaller `--page-size` or a narrower `--stores` value.
-
-Open Food Facts data is reused under the Open Database License. Keep attribution in
-project documentation or the product UI when using this catalog.
-
-7. Start the API:
+## Arranque
 
 ```bash
 fastapi dev app/main.py
 ```
 
-The API is exposed under `/api`.
+La API queda disponible en `http://localhost:8000/api`. Para usarla con Expo en local, revisa estas variables:
 
-For local frontend integration, set `BACKEND_CORS_ORIGINS` to the Expo origin and set
-`EXPO_PUBLIC_API_URL` in the frontend to the backend API URL, for example:
-
-```bash
+```env
 BACKEND_CORS_ORIGINS=http://localhost:8081,http://localhost:19006
 EXPO_PUBLIC_API_URL=http://localhost:8000/api
 ```
+
+## Comandos útiles
+
+```bash
+pytest
+pytest --cov=app
+alembic upgrade head
+alembic revision --autogenerate -m "descripción"
+```
+
+## Integraciones
+
+Las variables de Gemini, Google OAuth y SMTP están en `.env.example`. Si están vacías, se puede seguir trabajando con la mayoría del backend, pero no se probarán esas integraciones completas.
+
+Los datos de Open Food Facts se reutilizan bajo su licencia. Si se usa el catálogo importado en una entrega o producto, hay que mantener la atribución correspondiente.
