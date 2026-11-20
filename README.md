@@ -1,44 +1,59 @@
 # Alima
 
-Alima es una aplicación móvil de seguimiento nutricional desarrollada como TFG. Permite registrar comidas, consultar el progreso, guardar plantillas, escanear productos por código de barras y generar recomendaciones o análisis con IA.
+A nutrition tracking mobile app, built as my bachelor's thesis in Computer Engineering at the University of
+Alicante (graded 10/10). Users log their meals, follow their progress, save meal templates, scan products by barcode
+and get meal suggestions and diet analysis from an LLM.
 
-El proyecto está dividido en dos partes:
+**Backend:** Python · FastAPI · PostgreSQL · SQLAlchemy · Alembic · pytest
+**App:** TypeScript · React Native · Expo · Jest · React Native Testing Library
+**Integrations:** Google Gemini · Google sign-in · Open Food Facts · SMTP
 
-- `backend`: API REST con FastAPI, PostgreSQL y SQLAlchemy.
-- `frontend`: aplicación móvil con Expo y React Native.
+## Highlights
 
-## Estructura general
+- **REST API** with 30 endpoints, 14 PostgreSQL tables and 8 Alembic migrations, split into routers, services and
+  models.
+- **Accounts:** sign-up with JWT and bcrypt, Google sign-in verified on the server, and email verification and
+  password reset with hashed, single-use, expiring tokens.
+- **AI:** Google Gemini analyses the user's diet and suggests meals. Responses are requested as JSON and validated
+  against a schema before they reach the app, so the rest of the code never handles free-form model output.
+- **Barcode lookup:** products are searched in the local database first and then in Open Food Facts. Import scripts
+  can filter the catalogue by store and brand.
+- **104 automated tests:** 52 with pytest for the backend and 52 with Jest for the app.
+
+## Structure
 
 ```text
 backend/
-  app/        Código principal de la API
-  alembic/    Migraciones de base de datos
-  scripts/    Scripts de carga e importación de alimentos
-  tests/      Pruebas del backend
+  app/        API code: routers, services, models, schemas, security
+  alembic/    Database migrations
+  scripts/    Food seeding and Open Food Facts import
+  tests/      Backend tests
 
 frontend/
-  app/        Pantallas y navegación con Expo Router
-  components/ Componentes reutilizables
-  services/   Comunicación con la API
-  types/      Tipos compartidos del frontend
-  __tests__/  Pruebas del frontend
+  app/        Screens and navigation (Expo Router)
+  components/ Reusable components
+  services/   Typed API clients
+  types/      Shared TypeScript types
+  __tests__/  App tests
 ```
 
-## Puesta en marcha
+More detail in [`backend/README.md`](backend/README.md) and [`frontend/README.md`](frontend/README.md).
 
-Primero hay que levantar el backend. Necesita una base de datos PostgreSQL y un fichero `backend/.env`, que se puede crear copiando `backend/.env.example`.
+## Running it locally
+
+Start the backend first. It needs PostgreSQL and a `backend/.env` file based on `backend/.env.example`.
 
 ```bash
 cd backend
 python -m venv .venv
-.venv\Scripts\activate
+source .venv/bin/activate       # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
 alembic upgrade head
 python scripts/seed_foods.py
 fastapi dev app/main.py
 ```
 
-Después se arranca el frontend. También tiene su propio `.env`, basado en `frontend/.env.example`.
+Then start the app. It has its own `.env`, based on `frontend/.env.example`, which must point to the API:
 
 ```bash
 cd frontend
@@ -46,34 +61,23 @@ npm install
 npm run start
 ```
 
-Para conectar ambos en local, el frontend debe apuntar a la API:
-
 ```env
 EXPO_PUBLIC_API_URL=http://localhost:8000/api
 ```
 
-## Comandos útiles
-
-Backend:
+## Tests and other commands
 
 ```bash
+# backend
 pytest
 pytest --cov=app
-alembic upgrade head
 python scripts/import_openfoodfacts.py --limit 1000 --page-size 25
-```
 
-Frontend:
-
-```bash
-npm run start
-npm run android
-npm run ios
-npm run web
+# app
 npm run test
 npm run lint
+npm run android   # or ios / web
 ```
 
-## Notas
-
-Las claves de Gemini, Google OAuth y SMTP no son necesarias para revisar toda la estructura, pero sí para probar esas integraciones completas. La importación de alimentos usa Open Food Facts, por lo que depende de su disponibilidad y conviene usar límites bajos durante pruebas locales.
+The Gemini, Google OAuth and SMTP keys are only needed to try those integrations; the rest of the app works without
+them. The food import depends on Open Food Facts being available, so keep the limits low when testing locally.

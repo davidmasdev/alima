@@ -1,49 +1,43 @@
-# Frontend de Alima
+# Alima app
 
-Aplicación móvil de Alima, hecha con Expo, React Native y TypeScript. Desde aquí el usuario puede registrarse, configurar su perfil nutricional, registrar comidas, crear plantillas, consultar progreso, escanear productos y pedir recomendaciones o análisis con IA.
+The Alima mobile app, built with Expo, React Native and TypeScript. Users sign up, set up their nutrition profile,
+log meals, create templates, follow their progress, scan products and ask for AI recommendations or analysis.
 
-## Estructura
+## Structure
 
-- `app`: pantallas y navegación con Expo Router.
-  - `(auth)`: login, registro, verificación de correo, recuperación de contraseña y onboarding.
-  - `(tabs)`: pantallas principales: hoy, plantillas, progreso y perfil.
-- `components`: componentes reutilizables, modal de escaneo y elementos de interfaz.
-- `services`: llamadas a la API y gestión de sesión.
-- `types`: tipos TypeScript de las respuestas y datos principales.
-- `contexts`: contexto de tema claro/oscuro.
-- `constants`: colores y valores compartidos.
-- `assets`: imágenes, iconos y recursos de la app.
-- `__tests__`: pruebas del frontend.
+- `app`: screens and navigation with Expo Router.
+  - `(auth)`: login, sign-up, email verification, password recovery and onboarding.
+  - `(tabs)`: the main screens: today, templates, progress and profile.
+- `components`: reusable components, the scanner modal and UI elements.
+- `services`: API calls and session handling.
+- `types`: TypeScript types for the main responses and data.
+- `contexts`: light and dark theme context.
+- `constants`: shared colours and values.
+- `assets`: images, icons and app resources.
+- `__tests__`: app tests.
 
-## Configuración
-
-Instala dependencias:
+## Setup
 
 ```bash
 npm install
-```
-
-Crea el fichero de entorno a partir del ejemplo:
-
-```bash
 cp .env.example .env
 ```
 
-Para trabajar en local con el backend:
+To work locally against the backend:
 
 ```env
 EXPO_PUBLIC_API_URL=http://localhost:8000/api
 ```
 
-Las variables de Google OAuth solo hacen falta para probar el inicio de sesión con Google.
+The Google OAuth variables are only needed to try Google sign-in.
 
-## Arranque
+## Running
 
 ```bash
 npm run start
 ```
 
-Desde la terminal de Expo se puede abrir en Expo Go, emulador o navegador. También hay comandos directos:
+From the Expo terminal you can open the app in Expo Go, an emulator or the browser. There are also direct commands:
 
 ```bash
 npm run android
@@ -51,15 +45,17 @@ npm run ios
 npm run web
 ```
 
-## Comandos útiles
+## Useful commands
 
 ```bash
 npm run test
 npm run lint
 ```
 
-Los tests usan Jest y React Native Testing Library. Cubren servicios, componentes reutilizables, pantallas principales y algunos comportamientos por plataforma.
+The tests use Jest and React Native Testing Library. They cover the services, reusable components, the main screens
+and some platform-specific behaviour.
 
-## Conexión con la API
+## Talking to the API
 
-La comunicación con el backend se centraliza en `services/api.ts`. El resto de servicios (`auth`, `profile`, `dailyLog`, `templates`, `progress`, `recommendations` y `analysis`) usan esa base para mantener las rutas y tokens en un solo sitio.
+All backend calls go through `services/api.ts`. The other services (`auth`, `profile`, `dailyLog`, `templates`,
+`progress`, `recommendations` and `analysis`) build on it, so routes and tokens are handled in one place.

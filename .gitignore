@@ -5,3 +5,7 @@ Memoria-TFG-App-Nutrición.docx
 .coverage
 coverage/
 htmlcov/
+
+# Local notes for coding agents
+AGENTS.md
+CLAUDE.md
